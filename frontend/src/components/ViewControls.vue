@@ -4,24 +4,16 @@
     class="flex flex-col justify-between gap-2 sm:px-5 px-3 py-4"
   >
     <div class="flex flex-col gap-2">
+      <div v-if="quickFilterList.length" class="grid grid-cols-2 gap-2">
+        <div v-for="filter in quickFilterList" :key="filter.fieldname">
+          <QuickFilterField
+            :filter="filter"
+            @applyQuickFilter="(f, v) => applyQuickFilter(f, v)"
+          />
+        </div>
+      </div>
       <div class="flex items-center justify-between gap-2">
-        <FadedScrollableDiv
-          class="flex flex-1 items-center overflow-x-auto -ml-1 h-9"
-          orientation="horizontal"
-        >
-          <div
-            v-for="filter in quickFilterList"
-            :key="filter.fieldname"
-            class="m-1 min-w-36"
-          >
-            <QuickFilterField
-              :filter="filter"
-              @applyQuickFilter="(f, v) => applyQuickFilter(f, v)"
-            />
-          </div>
-        </FadedScrollableDiv>
-        <div class="-ml-2 h-[70%] border-l" />
-        <div class="flex shrink-0 gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <div
             v-if="closedCfg"
             class="flex items-center gap-1.5 text-sm text-ink-gray-7"
@@ -1697,6 +1689,9 @@ function saveView() {
 }
 
 function applyFilter({ event, idx, column, item, firstColumn }) {
+  // Royal: clicking a cell must open the record, never apply a filter.
+  // Filters are applied only from the filter bar.
+  return
   let restrictedFieldtypes = ['Datetime', 'Time']
   if (restrictedFieldtypes.includes(column.type) || idx === 0) return
   if (idx === 1 && firstColumn.key == '_liked_by') return
