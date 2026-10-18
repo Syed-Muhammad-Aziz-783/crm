@@ -37,6 +37,7 @@
         </template>
       </Dropdown>
       <Tooltip
+        v-if="false"
         :disabled="!isLeadConversionDisabled"
         :text="__('Cannot convert a lost lead to deal')"
       >

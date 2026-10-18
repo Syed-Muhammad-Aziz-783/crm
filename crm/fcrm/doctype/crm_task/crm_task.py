@@ -65,6 +65,18 @@ class CRMTask(Document):
 	def default_list_data():
 		columns = [
 			{
+				"label": "Lead Name",
+				"type": "Data",
+				"key": "lead_name",
+				"width": "14rem",
+			},
+			{
+				"label": "Phone",
+				"type": "Data",
+				"key": "lead_phone",
+				"width": "10rem",
+			},
+			{
 				"label": "Title",
 				"type": "Data",
 				"key": "title",
@@ -104,6 +116,8 @@ class CRMTask(Document):
 
 		rows = [
 			"name",
+			"lead_name",
+			"lead_phone",
 			"title",
 			"description",
 			"assigned_to",

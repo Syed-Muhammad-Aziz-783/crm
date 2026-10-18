@@ -1,5 +1,13 @@
 <template>
-  <div class="flex overflow-x-auto h-full">
+  <div class="flex flex-col h-full">
+  <div
+    v-if="options.closedToggle"
+    class="flex items-center gap-2 px-5 pb-2 text-sm text-ink-gray-7"
+  >
+    <Switch v-model="showClosed" size="sm" />
+    <span>{{ __('Show Won / Lost') }}</span>
+  </div>
+  <div class="flex overflow-x-auto flex-1 min-h-0">
     <Draggable
       v-if="columns"
       :list="columns"
@@ -10,7 +18,7 @@
     >
       <template #item="{ element: column }">
         <div
-          v-if="!column.column.delete"
+          v-if="!column.column.delete && !isHiddenColumn(column)"
           class="flex flex-col gap-2.5 min-w-72 w-72 hover:bg-surface-gray-2 rounded-6 p-2.5"
         >
           <div class="flex gap-2 items-center group justify-between">
@@ -173,16 +181,18 @@
       </Combobox>
     </div>
   </div>
+  </div>
 </template>
 <script setup>
 import RefreshIcon from '@/components/Icons/RefreshIcon.vue'
 import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
 import { isTouchScreenDevice, colors, parseColor } from '@/utils'
 import Draggable from 'vuedraggable'
-import { Combobox, Dropdown, Popover } from 'frappe-ui'
-import { computed } from 'vue'
+import { Combobox, Dropdown, Popover, Switch } from 'frappe-ui'
+import { computed, ref } from 'vue'
+import { useStorage } from '@vueuse/core'
 
-defineProps({
+const props = defineProps({
   options: {
     type: Object,
     default: () => ({
@@ -194,6 +204,17 @@ defineProps({
 })
 
 const emit = defineEmits(['update', 'loadMore'])
+
+// Royal: hide 'Converted' always; hide 'Won' and 'Lost' unless the switch is on
+const showClosed = useStorage('royal_kanban_show_closed', false)
+
+function isHiddenColumn(column) {
+  if (!props.options?.closedToggle) return false
+  const name = column.column?.name
+  if (name === 'Converted') return true
+  if (name === 'Won' || name === 'Lost') return !showClosed.value
+  return false
+}
 
 const kanban = defineModel({ type: Object })
 
