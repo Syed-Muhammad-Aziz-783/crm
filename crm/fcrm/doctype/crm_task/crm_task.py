@@ -27,6 +27,14 @@ class CRMTask(Document):
 		title: DF.Data
 	# end: auto-generated types
 
+	def before_validate(self):
+		# Royal: title is optional on the form. Auto-fill it from the description.
+		if not (self.title or "").strip():
+			from frappe.utils import strip_html
+
+			text = " ".join(strip_html(self.description or "").split())
+			self.title = text[:80] or self.get("lead_name") or "Task"
+
 	def after_insert(self):
 		self.assign_to()
 
