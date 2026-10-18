@@ -531,7 +531,14 @@ const showClosed = closedCfg ? useShowClosed(closedCfg.key) : ref(true)
 
 function effectiveFilters(userFilters = {}) {
   const f = { ...props.filters }
-  if (closedCfg && !showClosed.value && !userFilters?.[closedCfg.field]) {
+  // Kanban builds one status filter per column itself, so a status filter here
+  // would empty every column. For Kanban the columns are hidden instead.
+  if (
+    closedCfg &&
+    route.params.viewType !== 'kanban' &&
+    !showClosed.value &&
+    !userFilters?.[closedCfg.field]
+  ) {
     f[closedCfg.field] = ['not in', closedCfg.values]
   }
   return f

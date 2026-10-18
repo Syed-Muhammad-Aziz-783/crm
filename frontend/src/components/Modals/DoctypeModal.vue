@@ -61,6 +61,7 @@
       <div class="px-4 pb-7 pt-4 sm:px-6">
         <div class="flex flex-row-reverse flex-wrap gap-2">
           <Button
+            v-if="!(doctype === 'CRM Task' && editMode)"
             variant="solid"
             :label="editMode ? __('Update') : __('Create')"
             :loading="editMode ? document.save.loading : create.loading"
@@ -68,15 +69,13 @@
           />
           <template v-if="doctype === 'CRM Task' && editMode">
             <Button
-              variant="subtle"
-              theme="green"
+              variant="solid"
               :label="__('Done and Schedule Next')"
               :loading="document.save.loading"
               @click="markDone(true)"
             />
             <Button
-              variant="subtle"
-              theme="green"
+              variant="solid"
               :label="__('Done')"
               :loading="document.save.loading"
               @click="markDone(false)"
