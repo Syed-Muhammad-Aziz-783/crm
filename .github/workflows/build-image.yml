@@ -5,6 +5,7 @@ on:
     branches: [royal]
     paths-ignore:
       - ".github/workflows/**"
+      - "deploy/**"
   workflow_dispatch:
 
 permissions:

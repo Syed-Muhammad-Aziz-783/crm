@@ -16,8 +16,8 @@ docker rmi "$IMG" >/dev/null
 
 for S in frontend backend scheduler queue-long queue-short websocket; do
   C=$S-$P
-  docker cp "/tmp/$APP.tgz" "$C:/tmp/$APP.tgz"
-  docker exec -u root "$C" sh -c "cd /home/frappe/frappe-bench/apps/$APP && rm -rf $APP/public/frontend && tar xzf /tmp/$APP.tgz --no-same-owner && chown -R frappe:0 . && rm -f /tmp/$APP.tgz"
+  # unpack as the frappe user, streamed in, so no slow ownership step is needed
+  docker exec -i -u frappe "$C" sh -c "cd /home/frappe/frappe-bench/apps/$APP && rm -rf $APP/public/frontend && tar xzf - --no-same-owner --no-overwrite-dir" < "/tmp/$APP.tgz"
   echo "patched $C"
 done
 rm -f "/tmp/$APP.tgz"
