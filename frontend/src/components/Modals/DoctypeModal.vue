@@ -215,8 +215,11 @@ function markDone(scheduleNext) {
     }
   }
 
-  // already Done and nothing edited: nothing to save
-  if (!document.isDirty) return finish({ ...document.doc })
+  // isDirty is updated by a watcher after the next tick, so compare directly.
+  // Already Done and nothing edited: nothing to save.
+  const changed =
+    JSON.stringify(document.doc) !== JSON.stringify(document.originalDoc)
+  if (!changed) return finish({ ...document.doc })
 
   document.save.submit(null, {
     onSuccess: finish,

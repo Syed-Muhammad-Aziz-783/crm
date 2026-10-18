@@ -24,7 +24,7 @@
     v-model:updatedPageCount="updatedPageCount"
     doctype="CRM Deal"
     :options="{
-      allowedViews: ['list', 'group_by', 'kanban'],
+      allowedViews: ['list', 'group_by'],
     }"
   />
   <KanbanView

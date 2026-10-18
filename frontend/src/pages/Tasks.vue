@@ -24,7 +24,7 @@
     v-model:updatedPageCount="updatedPageCount"
     doctype="CRM Task"
     :options="{
-      allowedViews: ['list', 'kanban'],
+      allowedViews: ['list'],
     }"
   />
   <KanbanView

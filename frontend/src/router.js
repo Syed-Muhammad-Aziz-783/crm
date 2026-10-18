@@ -227,6 +227,9 @@ router.beforeEach(async (to, from, next) => {
     window.location.href = '/login?redirect-to=/crm'
   } else if (to.matched.length === 0) {
     next({ name: 'Invalid Page' })
+  } else if (to.params?.viewType === 'kanban') {
+    // Royal: Kanban is removed everywhere, send to the list view
+    next({ name: to.name, params: { ...to.params, viewType: 'list' }, query: {} })
   } else if (['Deal', 'Lead'].includes(to.name) && !to.hash) {
     let storageKey = to.name === 'Deal' ? 'lastDealTab' : 'lastLeadTab'
     const activeTab = localStorage.getItem(storageKey) || 'activity'
@@ -265,7 +268,7 @@ router.beforeEach(async (to, from, next) => {
       let defaultViewType = 'list'
 
       let globalDefault = getDefaultView(to.name)
-      if (globalDefault) {
+      if (globalDefault && globalDefault.type !== 'kanban') {
         defaultViewType = globalDefault.type || 'list'
         if (globalDefault.name && !globalDefault.is_standard) {
           next({
@@ -277,7 +280,7 @@ router.beforeEach(async (to, from, next) => {
         }
       }
 
-      for (const viewType of standardViewTypes) {
+      for (const viewType of standardViewTypes.filter((t) => t !== 'kanban')) {
         const standardView = standardViews.value?.[doctype + ' ' + viewType]
         if (standardView?.is_default) {
           defaultViewType = viewType

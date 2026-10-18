@@ -816,8 +816,12 @@ const viewsDropdownOptions = computed(() => {
     },
   ]
 
+  // Royal: Kanban is removed, so saved Kanban views are not shown
+  const visibleViews = (list.value?.data?.views || []).filter(
+    (v) => v.type !== 'kanban',
+  )
   if (list.value?.data?.views) {
-    list.value.data.views.forEach((view) => {
+    visibleViews.forEach((view) => {
       view.label = __(view.label)
       view.type = view.type || 'list'
       view.icon = getIcon(view.icon, view.type)
@@ -836,11 +840,11 @@ const viewsDropdownOptions = computed(() => {
         })
       }
     })
-    let publicViews = list.value.data.views.filter((v) => v.public)
-    let savedViews = list.value.data.views.filter(
+    let publicViews = visibleViews.filter((v) => v.public)
+    let savedViews = visibleViews.filter(
       (v) => !v.pinned && !v.public && !v.is_standard,
     )
-    let pinnedViews = list.value.data.views.filter((v) => v.pinned)
+    let pinnedViews = visibleViews.filter((v) => v.pinned)
 
     if (savedViews.length) {
       _views.push({
