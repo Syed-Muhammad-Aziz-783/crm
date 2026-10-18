@@ -28,6 +28,8 @@ function showTask(task) {
     defaults: {
       reference_doctype: props.doctype,
       reference_docname: props.doc?.name,
+      lead_name: props.doc?.lead_name,
+      lead_phone: props.doc?.mobile_no,
     },
     callbacks: {
       afterInsert: (d) => afterDoctype(d, true),

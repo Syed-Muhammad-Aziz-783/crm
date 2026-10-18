@@ -138,6 +138,10 @@ before_uninstall = "crm.uninstall.before_uninstall"
 permission_query_conditions = {
 	"CRM Lead": "crm.permissions.org_hierarchy.get_lead_permission_query_conditions",
 	"CRM Deal": "crm.permissions.org_hierarchy.get_deal_permission_query_conditions",
+	"CRM Task": "crm.permissions.sales_user_scope.task_query",
+	"FCRM Note": "crm.permissions.sales_user_scope.note_query",
+	"Contact": "crm.permissions.sales_user_scope.contact_query",
+	"CRM Organization": "crm.permissions.sales_user_scope.organization_query",
 	"CRM Notification": "crm.fcrm.doctype.crm_notification.crm_notification.get_permission_query_conditions",
 	"CRM Enrichment Run": "crm.domain_enrichment.doctype.crm_enrichment_run.crm_enrichment_run.get_permission_query_conditions",
 }
@@ -145,6 +149,10 @@ permission_query_conditions = {
 has_permission = {
 	"CRM Lead": "crm.permissions.org_hierarchy.has_lead_permission",
 	"CRM Deal": "crm.permissions.org_hierarchy.has_deal_permission",
+	"CRM Task": "crm.permissions.sales_user_scope.task_has_permission",
+	"FCRM Note": "crm.permissions.sales_user_scope.note_has_permission",
+	"Contact": "crm.permissions.sales_user_scope.contact_has_permission",
+	"CRM Organization": "crm.permissions.sales_user_scope.organization_has_permission",
 	"CRM Notification": "crm.fcrm.doctype.crm_notification.crm_notification.has_permission",
 	"CRM Enrichment Run": "crm.domain_enrichment.doctype.crm_enrichment_run.crm_enrichment_run.has_permission",
 }

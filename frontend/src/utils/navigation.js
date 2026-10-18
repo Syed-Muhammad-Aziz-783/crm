@@ -1,5 +1,4 @@
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
-import DealsIcon from '@/components/Icons/DealsIcon.vue'
 import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
 import NoteIcon from '@/components/Icons/NoteIcon.vue'
 import OrganizationsIcon from '@/components/Icons/OrganizationsIcon.vue'
@@ -16,7 +15,6 @@ export const navigationItems = [
     desktopOnly: true,
   },
   { label: 'Leads', icon: LeadsIcon, route: 'Leads' },
-  { label: 'Deals', icon: DealsIcon, route: 'Deals' },
   { label: 'Contacts', icon: ContactsIcon, route: 'Contacts' },
   { label: 'Organizations', icon: OrganizationsIcon, route: 'Organizations' },
   { label: 'Notes', icon: NoteIcon, route: 'Notes' },
