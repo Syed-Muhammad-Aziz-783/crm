@@ -15,7 +15,7 @@ if [ "$1" = "install" ]; then
   chmod +x /root/auto-hotpatch.sh
   ( crontab -l 2>/dev/null | grep -v 'auto-hotpatch.sh' | grep -v 'update-crm.sh'
     echo "*/2 * * * * /root/auto-hotpatch.sh >> $LOG 2>&1"
-    echo "0 3 * * * /root/update-crm.sh >> $LOG 2>&1" ) | crontab -
+    echo "0 * * * * /root/auto-hotpatch.sh full >> $LOG 2>&1" ) | crontab -
   echo "cron installed:"; crontab -l
   D=$(digest)
   if [ -z "$D" ]; then echo "WARNING: cannot read ghcr digest. Auto patch will NOT work. Send this to Claude."; else echo "digest check OK: $D"; fi
@@ -24,6 +24,18 @@ fi
 
 exec 9>/var/lock/royal-auto.lock
 flock -n 9 || exit 0
+
+if [ "$1" = "full" ]; then
+  # hourly: pull the full image only when a new one exists (keeps the rollback image safe)
+  FIMG=ghcr.io/syed-muhammad-aziz-783/royal-erpnext:v16
+  FD=$(docker buildx imagetools inspect "$FIMG" --format '{{.Manifest.Digest}}' 2>/dev/null)
+  [ -z "$FD" ] && exit 0
+  [ "$(cat /root/.royal-full-state 2>/dev/null)" = "$FD" ] && exit 0
+  echo "$(date '+%F %T') new full image found, updating"
+  if /root/update-crm.sh; then echo "$(date '+%F %T') FULL IMAGE OK"; else echo "$(date '+%F %T') FULL IMAGE FAILED"; fi
+  echo "$FD" > /root/.royal-full-state
+  exit 0
+fi
 
 D=$(digest)
 [ -z "$D" ] && exit 0
