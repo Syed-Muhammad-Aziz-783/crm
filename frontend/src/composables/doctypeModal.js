@@ -33,6 +33,7 @@ export function useDoctypeModal() {
     name,
     title,
     defaults,
+    callbacks,
     showModal,
     triggerCallback,
   }

@@ -33,6 +33,7 @@
     :options="{
       onClick: (row) => showTask(row.name),
       onNewClick: (column) => createTask(column),
+      closedToggle: { key: 'tasks', names: ['Done'] },
     }"
     @update="(data) => viewControls.updateKanbanSettings(data)"
     @loadMore="(columnName) => viewControls.loadMoreKanban(columnName)"

@@ -38,7 +38,7 @@
         query: { view: route.query.view, viewType: route.params.viewType },
       }),
       onNewClick: (column) => onNewClick(column),
-      closedToggle: true,
+      closedToggle: { key: 'leads', names: ['Won', 'Lost'], always: ['Converted'] },
     }"
     @update="(data) => viewControls.updateKanbanSettings(data)"
     @loadMore="(columnName) => viewControls.loadMoreKanban(columnName)"

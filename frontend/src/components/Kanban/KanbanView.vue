@@ -1,12 +1,5 @@
 <template>
   <div class="flex flex-col h-full">
-  <div
-    v-if="options.closedToggle"
-    class="flex items-center gap-2 px-5 pb-2 text-sm text-ink-gray-7"
-  >
-    <Switch v-model="showClosed" size="sm" />
-    <span>{{ __('Show Won / Lost') }}</span>
-  </div>
   <div class="flex overflow-x-auto flex-1 min-h-0">
     <Draggable
       v-if="columns"
@@ -188,9 +181,9 @@ import RefreshIcon from '@/components/Icons/RefreshIcon.vue'
 import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
 import { isTouchScreenDevice, colors, parseColor } from '@/utils'
 import Draggable from 'vuedraggable'
-import { Combobox, Dropdown, Popover, Switch } from 'frappe-ui'
-import { computed, ref } from 'vue'
-import { useStorage } from '@vueuse/core'
+import { Combobox, Dropdown, Popover } from 'frappe-ui'
+import { computed } from 'vue'
+import { useShowClosed } from '@/composables/closedToggle'
 
 const props = defineProps({
   options: {
@@ -205,18 +198,15 @@ const props = defineProps({
 
 const emit = defineEmits(['update', 'loadMore'])
 
-// Royal: hide 'Converted' always; hide 'Won' and 'Lost' unless the switch is on
-const showClosed = useStorage('royal_kanban_show_closed', false)
-
+// Royal: hide finished columns unless the switch (in the toolbar) is on
 function isHiddenColumn(column) {
-  if (!props.options?.closedToggle) return false
+  const cfg = props.options?.closedToggle
+  if (!cfg) return false
   const name = column.column?.name
-  if (name === 'Converted') return true
-  if (name === 'Won' || name === 'Lost') return !showClosed.value
+  if (cfg.always?.includes(name)) return true
+  if (cfg.names?.includes(name)) return !useShowClosed(cfg.key).value
   return false
 }
-
-const kanban = defineModel({ type: Object })
 
 const titleField = computed(() => {
   return kanban.value?.data?.title_field

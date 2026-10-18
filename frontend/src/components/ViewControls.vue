@@ -22,6 +22,13 @@
         </FadedScrollableDiv>
         <div class="-ml-2 h-[70%] border-l" />
         <div class="flex shrink-0 gap-2">
+          <div
+            v-if="closedCfg"
+            class="flex items-center gap-1.5 text-sm text-ink-gray-7"
+          >
+            <Switch v-model="showClosed" size="sm" />
+            <span class="whitespace-nowrap">{{ __(closedCfg.label) }}</span>
+          </div>
           <Button
             :tooltip="__('Refresh')"
             icon="lucide-refresh-ccw"
@@ -168,6 +175,13 @@
         <Button :label="__('Save Changes')" @click="saveView" />
       </div>
       <div class="flex items-center gap-2">
+        <div
+            v-if="closedCfg"
+            class="flex items-center gap-1.5 text-sm text-ink-gray-7"
+          >
+            <Switch v-model="showClosed" size="sm" />
+            <span class="whitespace-nowrap">{{ __(closedCfg.label) }}</span>
+          </div>
         <Button
           :tooltip="__('Refresh')"
           icon="lucide-refresh-ccw"
@@ -356,6 +370,7 @@ import {
   toast,
   call,
   usePageMeta,
+  Switch,
 } from 'frappe-ui'
 import {
   computed,
@@ -368,6 +383,7 @@ import {
 } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { isMobileView } from '@/composables/settings'
+import { closedConfig, useShowClosed } from '@/composables/closedToggle'
 import {
   commandPaletteOpen,
   useCommandPaletteContext,
@@ -508,6 +524,23 @@ watch(updatedPageCount, (value) => {
   updatePageLength(value)
 })
 
+// Royal: hide Won/Lost leads and Done tasks unless the switch is on.
+// If the user filters on that field themselves, we do not interfere.
+const closedCfg = closedConfig[props.doctype]
+const showClosed = closedCfg ? useShowClosed(closedCfg.key) : ref(true)
+
+function effectiveFilters(userFilters = {}) {
+  const f = { ...props.filters }
+  if (closedCfg && !showClosed.value && !userFilters?.[closedCfg.field]) {
+    f[closedCfg.field] = ['not in', closedCfg.values]
+  }
+  return f
+}
+
+watch(showClosed, () => {
+  if (closedCfg) reload()
+})
+
 function getParams() {
   let _view = getView(route.query.view, route.params.viewType, props.doctype)
   const view_name = _view?.name || ''
@@ -546,7 +579,7 @@ function getParams() {
     doctype: props.doctype,
     filters: filters,
     order_by: order_by,
-    default_filters: props.filters,
+    default_filters: effectiveFilters(filters),
     view: {
       custom_view_name: view_name,
       view_type: view_type,
@@ -578,7 +611,7 @@ listResource = createResource({
       doctype: props.doctype,
       filters: params.filters,
       order_by: params.order_by,
-      default_filters: props.filters,
+      default_filters: effectiveFilters(params.filters),
       view: {
         custom_view_name: cv?.name || '',
         view_type: cv?.type || route.params.viewType || 'list',
@@ -665,7 +698,7 @@ async function exportRows() {
   let fields = JSON.stringify(list.value.data.columns.map((f) => f.key))
   const userId = getUser()?.name
   let filters = {
-    ...props.filters,
+    ...effectiveFilters(list.value.params.filters),
     ...list.value.params.filters,
   }
 

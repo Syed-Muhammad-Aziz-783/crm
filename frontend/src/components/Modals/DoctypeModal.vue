@@ -59,13 +59,29 @@
         </div>
       </div>
       <div class="px-4 pb-7 pt-4 sm:px-6">
-        <div class="flex flex-row-reverse gap-2">
+        <div class="flex flex-row-reverse flex-wrap gap-2">
           <Button
             variant="solid"
             :label="editMode ? __('Update') : __('Create')"
             :loading="editMode ? document.save.loading : create.loading"
             @click="submit"
           />
+          <template v-if="doctype === 'CRM Task' && editMode">
+            <Button
+              variant="subtle"
+              theme="green"
+              :label="__('Done and Schedule Next')"
+              :loading="document.save.loading"
+              @click="markDone(true)"
+            />
+            <Button
+              variant="subtle"
+              theme="green"
+              :label="__('Done')"
+              :loading="document.save.loading"
+              @click="markDone(false)"
+            />
+          </template>
         </div>
       </div>
     </template>
@@ -82,6 +98,7 @@ import { usersStore } from '@/stores/users'
 import { showQuickEntryModal, quickEntryProps } from '@/composables/modals'
 import { isMobileView } from '@/composables/settings'
 import { setupCustomizations } from '@/utils'
+import { useDoctypeModal } from '@/composables/doctypeModal'
 
 import { Dialog, call, createResource, toast } from 'frappe-ui'
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
@@ -101,6 +118,7 @@ const emit = defineEmits(['afterInsert', 'afterUpdate'])
 const router = useRouter()
 
 const { isManager } = usersStore()
+const doctypeModalState = useDoctypeModal()
 const { $dialog, $socket } = globalStore()
 
 const { document, scripts, triggerOnRender, triggerOnBeforeCreate } =
@@ -163,6 +181,47 @@ function update() {
       emit('afterUpdate', d)
       show.value = false
     },
+    onError: (err) => {
+      error.value = err.messages?.[0] || __('Could not update document')
+    },
+  })
+}
+
+// Royal: mark the task Done. With scheduleNext, open a new task for the same
+// lead (same name, phone and assignee) so the next follow-up can be set.
+function markDone(scheduleNext) {
+  window.document.activeElement?.blur()
+  const d = document.doc
+  const next = {
+    reference_doctype: d.reference_doctype,
+    reference_docname: d.reference_docname,
+    lead_name: d.lead_name,
+    lead_phone: d.lead_phone,
+    assigned_to: d.assigned_to,
+  }
+  const callbacks = { ...doctypeModalState.callbacks.value }
+  document.doc.status = 'Done'
+
+  const finish = (saved) => {
+    emit('afterUpdate', saved)
+    show.value = false
+    if (scheduleNext) {
+      setTimeout(() => {
+        doctypeModalState.showModal({
+          doctype: 'CRM Task',
+          title: 'Task',
+          defaults: next,
+          callbacks,
+        })
+      }, 300)
+    }
+  }
+
+  // already Done and nothing edited: nothing to save
+  if (!document.isDirty) return finish({ ...document.doc })
+
+  document.save.submit(null, {
+    onSuccess: finish,
     onError: (err) => {
       error.value = err.messages?.[0] || __('Could not update document')
     },
