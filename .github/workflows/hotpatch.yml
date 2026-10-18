@@ -48,7 +48,7 @@ jobs:
 
       - name: Pack app
         run: |
-          tar czf ${APP}.tgz -C crm --exclude=./.git --exclude=./frontend --exclude=node_modules --exclude=./.github .
+          tar czf ${APP}.tgz -C crm --exclude=./.git --exclude=./frontend --exclude=node_modules --exclude=./.github --exclude=./deploy .
           ls -lh ${APP}.tgz
           printf 'FROM scratch\nCOPY %s.tgz /%s.tgz\nCMD ["none"]\n' "$APP" "$APP" > Dockerfile.hotpatch
 
