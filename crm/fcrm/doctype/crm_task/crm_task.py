@@ -28,6 +28,10 @@ class CRMTask(Document):
 	# end: auto-generated types
 
 	def before_validate(self):
+		# Royal: tasks are only Todo or Done. Anything else (old default Backlog) becomes Todo.
+		if self.status not in ("Todo", "Done"):
+			self.status = "Todo"
+
 		# Royal: title is optional on the form. Auto-fill it from the description.
 		if not (self.title or "").strip():
 			from frappe.utils import strip_html

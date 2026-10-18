@@ -246,7 +246,7 @@ function showTask(name) {
     title: 'Task',
     defaults: name
       ? {}
-      : { status: 'Backlog', priority: 'Low', ...referenceDefaults() },
+      : { status: 'Todo', priority: 'Low', ...referenceDefaults() },
     callbacks: {
       afterInsert: (d) => addTaskToCallLog(d, true),
       afterUpdate: (d) => addTaskToCallLog(d, false),
