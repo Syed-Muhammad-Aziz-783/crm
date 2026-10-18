@@ -1,0 +1,65 @@
+name: Hot patch CRM (fast lane)
+
+# Builds only the CRM app (screen + Python) in about 2 minutes and ships it
+# as a tiny private image. The server copies it into the running containers
+# with /root/hotpatch.sh crm. The full image (build-image.yml) still builds
+# from the same commit, so nothing is lost when Coolify restarts.
+
+on:
+  push:
+    branches: [royal]
+    paths-ignore:
+      - ".github/workflows/build-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  APP: crm
+  IMAGE: ghcr.io/syed-muhammad-aziz-783/hotpatch-crm
+
+jobs:
+  hotpatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: crm
+
+      - name: Get Frappe UI source (needed by the CRM screen build)
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse -b version-16 https://github.com/frappe/frappe.git frappe
+          git -C frappe sparse-checkout set ui
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+          cache-dependency-path: crm/frontend/yarn.lock
+
+      - name: Build CRM screen
+        run: |
+          cd crm/frontend
+          yarn install --frozen-lockfile
+          yarn build
+
+      - name: Pack app
+        run: |
+          tar czf ${APP}.tgz -C crm --exclude=./.git --exclude=./frontend --exclude=node_modules --exclude=./.github .
+          ls -lh ${APP}.tgz
+          printf 'FROM scratch\nCOPY %s.tgz /%s.tgz\nCMD ["none"]\n' "$APP" "$APP" > Dockerfile.hotpatch
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push hot patch image
+        run: |
+          docker build -f Dockerfile.hotpatch -t ${IMAGE}:latest -t ${IMAGE}:sha-${GITHUB_SHA} .
+          docker push ${IMAGE}:latest
+          docker push ${IMAGE}:sha-${GITHUB_SHA}
