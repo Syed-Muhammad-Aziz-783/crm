@@ -862,7 +862,7 @@ def _royal_delete_one(doctype: str, name: str):
 
 
 @frappe.whitelist(methods=["POST"])
-def royal_delete(doctype: str, name: str):
+def royal_delete(doctype: str, name: str | int):
 	# Royal: one-click delete for Leads, Deals and Tasks. Removes what hangs off the record
 	# (notifications, and for leads/deals their tasks and notes) so nothing blocks the delete.
 	# Any failure is turned into a readable message instead of a bare "Internal Server Error".
@@ -870,6 +870,8 @@ def royal_delete(doctype: str, name: str):
 
 	if doctype not in ("CRM Lead", "CRM Deal", "CRM Task"):
 		frappe.throw(_("Not allowed for {0}").format(doctype), frappe.PermissionError)
+
+	name = str(name)
 
 	try:
 		_royal_delete_one(doctype, name)
