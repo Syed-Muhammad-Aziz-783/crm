@@ -85,6 +85,7 @@ export function getMeta(doctype) {
     let {
       dt = doctype,
       withStandardFields = false,
+      withCountFields = false,
       restrictNoValueFields = true,
       restrictedFieldTypes = [],
     } = options
@@ -123,6 +124,14 @@ export function getMeta(doctype) {
 
     if (withStandardFields) {
       fieldsMeta = fieldsMeta.concat(standardFieldsMeta)
+    }
+
+    // Royal: counted columns, only offered in the Columns picker (not in filters/sort)
+    if (withCountFields && ['CRM Lead', 'CRM Deal'].includes(dt)) {
+      fieldsMeta = fieldsMeta.concat([
+        { label: __('Open Tasks'), fieldname: '_task_count', fieldtype: 'Data' },
+        { label: __('Notes'), fieldname: '_note_count', fieldtype: 'Data' },
+      ])
     }
 
     return fieldsMeta || []

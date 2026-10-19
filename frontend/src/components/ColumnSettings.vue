@@ -197,7 +197,7 @@ const rows = computed({
 const { getFields } = getMeta(props.doctype)
 
 const fields = computed(() => {
-  const _fields = getFields({ withStandardFields: true }) || []
+  const _fields = getFields({ withStandardFields: true, withCountFields: true }) || []
   if (!_fields.length) return []
 
   let existingFields = []
