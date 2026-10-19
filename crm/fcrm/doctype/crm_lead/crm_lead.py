@@ -109,7 +109,8 @@ class CRMLead(Document):
 		# Royal: notifications and tasks that point at this lead must not block its delete
 		import frappe
 
-		frappe.db.delete("CRM Notification", {"reference_doctype": "CRM Lead", "reference_docname": self.name})
+		frappe.db.delete("CRM Notification", {"reference_doctype": "CRM Lead", "reference_name": self.name})
+		frappe.db.delete("CRM Notification", {"notification_type_doctype": "CRM Lead", "notification_type_doc": self.name})
 
 	def on_update(self):
 		# Royal: tasks keep a copy of the lead name and phone; refresh it when the lead changes

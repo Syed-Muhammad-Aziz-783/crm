@@ -848,7 +848,8 @@ def _royal_delete_one(doctype: str, name: str):
 	if not frappe.has_permission(doctype, "delete", name):
 		frappe.throw(_("You do not have permission to delete this record"), frappe.PermissionError)
 
-	frappe.db.delete("CRM Notification", {"reference_doctype": doctype, "reference_docname": name})
+	frappe.db.delete("CRM Notification", {"reference_doctype": doctype, "reference_name": name})
+	frappe.db.delete("CRM Notification", {"notification_type_doctype": doctype, "notification_type_doc": name})
 
 	if doctype in ("CRM Lead", "CRM Deal"):
 		for child in ("CRM Task", "FCRM Note"):

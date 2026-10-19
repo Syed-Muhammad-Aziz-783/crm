@@ -47,7 +47,8 @@ class CRMTask(Document):
 		# refuse the delete ("linked with CRM Notification"). Remove them first.
 		import frappe
 
-		frappe.db.delete("CRM Notification", {"reference_doctype": "CRM Task", "reference_docname": self.name})
+		frappe.db.delete("CRM Notification", {"reference_doctype": "CRM Task", "reference_name": self.name})
+		frappe.db.delete("CRM Notification", {"notification_type_doctype": "CRM Task", "notification_type_doc": self.name})
 
 	def validate_required(self):
 		# Royal: a task needs a due date and an assignee. Old tasks that never had
