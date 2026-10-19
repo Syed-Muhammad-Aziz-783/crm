@@ -171,6 +171,7 @@ import {
   DateRangePicker,
 } from 'frappe-ui'
 import { h, computed, onMounted } from 'vue'
+import { allTags, loadTags } from '@/utils/tagColors'
 import { isMobileView } from '@/composables/settings'
 import { getFormat } from '@/utils'
 
@@ -199,6 +200,7 @@ const filterableFields = createResource({
 })
 
 onMounted(() => {
+  loadTags(true)
   if (filterableFields.data?.length) return
   filterableFields.fetch()
 })
@@ -284,7 +286,11 @@ function convertFilters(data, allFilters) {
         field,
         fieldname: key,
         operator: oppositeOperatorMap[value[0]],
-        value: value[1],
+        // Royal: the tag picker shows the plain tag name, not %name%
+        value:
+          key === '_user_tags' && typeof value[1] === 'string'
+            ? value[1].replace(/%/g, '')
+            : value[1],
       })
     }
   }
@@ -305,6 +311,14 @@ function getOperators(fieldtype, fieldname) {
         { label: __('Is'), value: 'is' },
       ],
     )
+  }
+  if (fieldname === '_user_tags') {
+    // Royal: tags are matched exactly on the server (see royal_tag_filters in crm/api/doc.py)
+    options = [
+      { label: __('Has tag'), value: 'like' },
+      { label: __("Doesn't have tag"), value: 'not like' },
+      { label: __('Is'), value: 'is' },
+    ]
   }
   if (fieldname === '_assign') {
     // TODO: make equals and not equals work
@@ -423,6 +437,18 @@ function getValueControl(f) {
     return h(Combobox, {
       trigger: 'button',
       options: timespanOptions,
+      modelValue: f.value,
+      'onUpdate:modelValue': (v) => updateValue(v, f),
+    })
+  } else if (
+    field.fieldname === '_user_tags' &&
+    ['like', 'not like'].includes(operator)
+  ) {
+    // Royal: pick from the tags saved in the CRM
+    return h(Combobox, {
+      trigger: 'button',
+      options: allTags.value.map((t) => ({ label: t, value: t })),
+      placeholder: __('Select a tag'),
       modelValue: f.value,
       'onUpdate:modelValue': (v) => updateValue(v, f),
     })
@@ -611,6 +637,12 @@ function transformIn(f) {
 }
 
 function placeholder(f) {
+  if (
+    f.field.fieldname === '_user_tags' &&
+    ['like', 'not like'].includes(f.operator)
+  ) {
+    return __('Select a tag')
+  }
   if (f.operator === 'between') {
     return __('01/01/2022 to 01/31/2022')
   } else if (f.operator === 'in' || f.operator === 'not in') {
@@ -633,6 +665,8 @@ function placeholder(f) {
     return __('01/01/2022')
   } else if (typeCheck.includes(f.field.fieldtype)) {
     return __('Yes')
+  } else if (f.field.fieldname === '_user_tags') {
+    return __('Select a tag')
   } else if (typeLink.includes(f.field.fieldtype)) {
     return __('Select a Value')
   } else if (typeSelect.includes(f.field.fieldtype)) {

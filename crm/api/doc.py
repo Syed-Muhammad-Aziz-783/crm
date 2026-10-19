@@ -253,6 +253,55 @@ def update_in_standard_filter(fieldname, doctype, value):
 		)
 
 
+def royal_tag_filters(doctype, filters):
+	"""Turn a filter on Tags into an exact `name in (...)` / `name not in (...)` filter.
+
+	`_user_tags` is one comma separated text, so LIKE would also match "Hot" inside "Hot lead".
+	Frappe keeps one Tag Link row per tag per record, so we read the matching record names from there.
+	"""
+	if not filters or "_user_tags" not in filters:
+		return filters
+
+	filters = frappe._dict(filters)
+	cond = filters.pop("_user_tags")
+	if isinstance(cond, (list, tuple)) and len(cond) >= 2:
+		op, value = str(cond[0]).lower(), cond[1]
+	else:
+		op, value = "=", cond
+
+	def tag_names(raw):
+		items = raw if isinstance(raw, (list, tuple)) else [raw]
+		return [str(t).strip("% ").strip() for t in items if t is not None and str(t).strip("% ").strip()]
+
+	link_filters = {"document_type": doctype}
+	if op == "is":
+		has_any = str(value).lower() == "set"
+		positive = has_any
+	else:
+		tags = tag_names(value)
+		if not tags:
+			return filters  # nothing chosen yet, do not filter
+		link_filters["tag"] = ["in", tags]
+		positive = op in ("like", "=", "in")
+
+	names = frappe.get_all(
+		"Tag Link", filters=link_filters, pluck="document_name", distinct=True, limit_page_length=0
+	)
+	names = [str(n) for n in names]
+
+	existing = filters.get("name")
+	if existing is None:
+		filters["name"] = ["in" if positive else "not in", names]
+	elif positive and (isinstance(existing, str) or isinstance(existing, int)):
+		filters["name"] = ["in", [n for n in names if n == str(existing)]]
+	elif positive and isinstance(existing, (list, tuple)) and existing and str(existing[0]).lower() == "in":
+		wanted = {str(n) for n in existing[1]}
+		filters["name"] = ["in", [n for n in names if n in wanted]]
+	# any other mix with a name filter is rare; the name filter is kept as the user set it
+
+	return filters
+
+
 @frappe.whitelist()
 def get_data(
 	doctype: str,
@@ -295,6 +344,8 @@ def get_data(
 	if default_filters:
 		default_filters = frappe.parse_json(default_filters)
 		filters.update(default_filters)
+
+	filters = royal_tag_filters(doctype, filters)
 
 	is_default = True
 	data = []
