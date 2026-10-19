@@ -6,15 +6,21 @@
     >
       {{ column.label }}
     </div>
-    <template v-for="field in column.fields" :key="field.fieldname">
+    <template v-for="field in visibleFields" :key="field.fieldname">
       <Field :field="field" :data-name="field.fieldname" />
     </template>
   </div>
 </template>
 <script setup>
 import Field from '@/components/FieldLayout/Field.vue'
+import { computed } from 'vue'
 
-defineProps({
+const props = defineProps({
   column: { type: Object, required: true },
 })
+
+// Royal: one phone field only. Mobile No is hidden everywhere, the server keeps it equal to Phone.
+const visibleFields = computed(() =>
+  (props.column.fields || []).filter((f) => f.fieldname !== 'mobile_no'),
+)
 </script>

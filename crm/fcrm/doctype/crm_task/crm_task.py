@@ -63,7 +63,25 @@ class CRMTask(Document):
 			if self.is_new() or (before and before.get(fieldname)):
 				frappe.throw(_("{0} is required").format(_(label)), frappe.MandatoryError)
 
+	def fill_from_lead(self):
+		# Royal: always show the lead's current phone and name on the task
+		import frappe
+
+		if self.reference_doctype != "CRM Lead" or not self.reference_docname:
+			return
+		meta = frappe.get_meta("CRM Task")
+		lead = frappe.db.get_value(
+			"CRM Lead", self.reference_docname, ["lead_name", "phone", "mobile_no"], as_dict=True
+		)
+		if not lead:
+			return
+		if meta.has_field("lead_phone"):
+			self.lead_phone = lead.phone or lead.mobile_no
+		if meta.has_field("lead_name"):
+			self.lead_name = lead.lead_name
+
 	def validate(self):
+		self.fill_from_lead()
 		self.validate_required()
 		if self.is_new() or not self.assigned_to:
 			return

@@ -84,6 +84,9 @@ class CRMDeal(Document):
 		enrich_form_submission(self)
 
 	def before_validate(self):
+		from crm.fcrm.doctype.crm_lead.crm_lead import royal_sync_phone
+
+		royal_sync_phone(self)
 		self.set_sla()
 
 	def validate(self):

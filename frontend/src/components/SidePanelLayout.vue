@@ -32,7 +32,7 @@
                 class="column flex flex-col gap-1.5 overflow-y-auto"
               >
                 <template
-                  v-for="field in section.columns[0].fields || []"
+                  v-for="field in (section.columns[0].fields || []).filter((f) => f.fieldname !== 'mobile_no')"
                   :key="field.fieldname"
                 >
                   <div

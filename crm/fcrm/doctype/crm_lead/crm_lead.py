@@ -19,6 +19,23 @@ from crm.fcrm.doctype.utils import add_or_remove_lost_reason_section_in_sidepane
 LEAD_DEAL_FIELD_MAP = {"lead_owner": "deal_owner"}
 
 
+def royal_sync_phone(doc):
+	# Royal: one phone number. Phone and Mobile No always hold the same value,
+	# whichever one the user (or an import / web form) filled.
+	phone = (doc.get("phone") or "").strip()
+	mobile = (doc.get("mobile_no") or "").strip()
+	if doc.is_new() or not doc.get_doc_before_save():
+		number = phone or mobile
+	else:
+		before = doc.get_doc_before_save()
+		phone_changed = phone != (before.get("phone") or "").strip()
+		mobile_changed = mobile != (before.get("mobile_no") or "").strip()
+		number = mobile if (mobile_changed and not phone_changed) else (phone or mobile)
+	doc.phone = number or None
+	doc.mobile_no = number or None
+
+
+
 class CRMLead(Document):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
@@ -85,7 +102,24 @@ class CRMLead(Document):
 		enrich_form_submission(self)
 
 	def before_validate(self):
+		royal_sync_phone(self)
 		self.set_sla()
+
+	def on_update(self):
+		# Royal: tasks keep a copy of the lead name and phone; refresh it when the lead changes
+		import frappe
+
+		meta = frappe.get_meta("CRM Task")
+		values = {}
+		if meta.has_field("lead_phone"):
+			values["lead_phone"] = self.phone or self.mobile_no
+		if meta.has_field("lead_name"):
+			values["lead_name"] = self.lead_name
+		if values:
+			for name in frappe.get_all(
+				"CRM Task", filters={"reference_doctype": "CRM Lead", "reference_docname": self.name}, pluck="name"
+			):
+				frappe.db.set_value("CRM Task", name, values, update_modified=False)
 
 	def validate(self):
 		self.validate_status()
@@ -483,9 +517,9 @@ class CRMLead(Document):
 				"width": "12rem",
 			},
 			{
-				"label": "Mobile No.",
+				"label": "Phone",
 				"type": "Data",
-				"key": "mobile_no",
+				"key": "phone",
 				"width": "11rem",
 			},
 			{
