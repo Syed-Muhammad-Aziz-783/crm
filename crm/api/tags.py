@@ -63,6 +63,49 @@ def set_tag_color(tag: str, color: str):
 	return {"name": tag, "color": color, "stored": True}
 
 
+def _notify(doctype, name):
+	"""Same signal Frappe sends when a document changes, so open lists and pages on every device refresh."""
+	frappe.publish_realtime(
+		"list_update",
+		{"doctype": doctype, "name": name, "user": frappe.session.user},
+		after_commit=True,
+	)
+
+
+def _check_doc(doctype, name):
+	if doctype not in TAG_DOCTYPES:
+		frappe.throw(frappe._("Tags are not enabled for {0}").format(doctype))
+	frappe.has_permission(doctype, "write", name, throw=True)
+
+
+@frappe.whitelist()
+def add_tag(doctype: str, name: str | int, tag: str, color: str | None = None):
+	"""Add one tag to a record. A brand-new tag also gets the chosen color."""
+	_check_user()
+	name = str(name)
+	tag = _clean(tag)
+	if not tag:
+		frappe.throw(frappe._("Tag is empty"))
+	_check_doc(doctype, name)
+	is_new = not frappe.db.exists("Tag", tag)
+	DocTags(doctype).add(name, tag)
+	if is_new and color in COLORS:
+		set_tag_color(tag, color)
+	_notify(doctype, name)
+	return DocTags(doctype).get_tags(name)
+
+
+@frappe.whitelist()
+def remove_tag(doctype: str, name: str | int, tag: str):
+	"""Remove one tag from a record."""
+	_check_user()
+	name = str(name)
+	_check_doc(doctype, name)
+	DocTags(doctype).remove(name, _clean(tag))
+	_notify(doctype, name)
+	return DocTags(doctype).get_tags(name)
+
+
 @frappe.whitelist()
 def add_tags_to_doc(doctype: str, name: str | int, tags: str | list, colors: str | dict | None = None):
 	"""Add several tags to one record (used right after a record is created)."""
@@ -81,6 +124,7 @@ def add_tags_to_doc(doctype: str, name: str | int, tags: str | list, colors: str
 		dt.add(name, tag)
 		if colors.get(tag) in COLORS:
 			set_tag_color(tag, colors[tag])
+	_notify(doctype, name)
 	return dt.get_tags(name)
 
 
@@ -111,3 +155,5 @@ def delete_tag(tag: str):
 		except Exception:
 			frappe.log_error(title="Royal tag delete: could not strip tag from a record")
 	frappe.delete_doc("Tag", tag, ignore_permissions=True, force=True)
+	for link in links:
+		_notify(link.document_type, link.document_name)

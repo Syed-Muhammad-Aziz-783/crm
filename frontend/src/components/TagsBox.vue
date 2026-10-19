@@ -1,28 +1,37 @@
 <template>
-  <!-- Royal: tags with colors. Saved records use Frappe's own tag API (same data as the desk "Tags");
+  <!-- Royal: tags with colors. Saved records use crm.api.tags (same tags as the ERPNext desk);
        on a create form (no docname) it only collects tags and the form saves them after the record is created. -->
   <div
+    ref="root"
     class="flex flex-wrap items-center gap-1.5"
     :class="bare ? 'py-1' : 'border-b px-3 py-2.5 sm:px-5'"
   >
-    <span v-if="bare" class="mr-1 text-sm text-ink-gray-5">{{ __('Tags') }}</span>
+    <LucideTag class="h-3.5 w-3.5 shrink-0 text-ink-gray-5" />
+    <span
+      v-if="!tags.length && !adding"
+      class="text-sm text-ink-gray-5"
+    >
+      {{ __('No tags') }}
+    </span>
+
     <span
       v-for="tag in tags"
       :key="tag"
-      class="relative inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-sm"
+      data-tag-chip
+      class="relative inline-flex max-w-full items-center rounded-full text-sm"
       :class="colorOf(tag).chip"
     >
       <button
         type="button"
-        class="truncate"
+        class="max-w-[12rem] truncate py-1 pl-2.5 pr-1"
         :title="__('Change color')"
-        @click="pickerFor = pickerFor === tag ? null : tag"
+        @click="togglePicker(tag, $event)"
       >
         {{ tag }}
       </button>
       <button
         type="button"
-        class="rounded-full px-0.5 opacity-60 hover:opacity-100"
+        class="rounded-full py-1 pl-0.5 pr-2 text-base leading-none opacity-60 hover:opacity-100"
         :aria-label="__('Remove tag')"
         @click="removeTag(tag)"
       >
@@ -30,51 +39,85 @@
       </button>
       <div
         v-if="pickerFor === tag"
-        class="absolute left-0 top-8 z-30 flex w-max gap-1.5 rounded border bg-surface-white p-2 shadow-lg"
+        data-tag-chip
+        class="absolute top-full z-30 mt-1 grid w-44 grid-cols-5 gap-2 rounded-6 bg-surface-elevation-2 p-2.5 shadow-2xl ring-1 ring-black ring-opacity-5"
+        :class="pickerAlign === 'right' ? 'right-0' : 'left-0'"
       >
         <button
           v-for="c in TAG_COLORS"
           :key="c.name"
           type="button"
-          class="h-6 w-6 rounded-full border-2"
-          :class="[c.dot, colorOf(tag).name === c.name ? 'border-ink-gray-9' : 'border-transparent']"
+          class="h-6 w-6 rounded-full"
+          :class="[
+            c.dot,
+            colorOf(tag).name === c.name
+              ? 'ring-2 ring-ink-gray-9 ring-offset-2 ring-offset-surface-elevation-2'
+              : '',
+          ]"
           :aria-label="c.name"
           @click="chooseColor(tag, c.name)"
         />
       </div>
     </span>
-    <div v-if="adding" class="relative">
+
+    <form
+      v-if="adding"
+      ref="formRef"
+      class="relative flex items-center gap-1"
+      @submit.prevent="addTag(text)"
+    >
       <input
         ref="inputRef"
         v-model="text"
         type="text"
         maxlength="60"
-        :placeholder="__('Type a tag, press Enter')"
-        class="h-7 w-44 rounded border border-outline-gray-2 bg-surface-white px-2 text-base text-ink-gray-9 focus:outline-none focus:ring-1 focus:ring-outline-gray-4"
-        @keydown.enter.prevent="addTag(text)"
+        autocomplete="off"
+        autocapitalize="words"
+        enterkeyhint="done"
+        :placeholder="__('Type a tag name')"
+        class="h-7 w-40 rounded-md bg-surface-gray-2 px-2.5 text-base text-ink-gray-9 placeholder:text-ink-gray-4 focus:bg-surface-gray-3 focus:outline-none"
+        @input="onInput"
         @keydown.esc.prevent="closeInput"
         @blur="onBlur"
       />
-      <div
-        v-if="suggestions.length"
-        class="absolute left-0 top-8 z-30 max-h-48 w-44 overflow-auto rounded border bg-surface-white p-1 shadow-lg"
+      <button
+        type="submit"
+        class="flex h-7 w-7 items-center justify-center rounded-md bg-surface-gray-9 text-white"
+        :aria-label="__('Add tag')"
+        @mousedown.prevent
       >
+        <LucideCheck class="h-4 w-4" />
+      </button>
+      <div
+        v-if="canCreate || suggestions.length"
+        class="absolute left-0 z-30 max-h-56 w-60 overflow-auto rounded-6 bg-surface-elevation-2 p-1 shadow-2xl ring-1 ring-black ring-opacity-5"
+        :class="openUp ? 'bottom-full mb-1' : 'top-full mt-1'"
+      >
+        <button
+          v-if="canCreate"
+          type="button"
+          class="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-base text-ink-gray-8 hover:bg-surface-gray-2"
+          @mousedown.prevent="addTag(text)"
+        >
+          <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="colorOf(clean(text)).dot" />
+          <span class="truncate">{{ __('Create') }} "{{ clean(text) }}"</span>
+        </button>
         <button
           v-for="s in suggestions"
           :key="s"
           type="button"
-          class="flex w-full items-center gap-2 truncate rounded px-2 py-1.5 text-left text-base text-ink-gray-8 hover:bg-surface-gray-2"
+          class="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-base text-ink-gray-8 hover:bg-surface-gray-2"
           @mousedown.prevent="addTag(s)"
         >
           <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="colorOf(s).dot" />
           <span class="truncate">{{ s }}</span>
         </button>
       </div>
-    </div>
+    </form>
     <button
       v-else
       type="button"
-      class="inline-flex items-center gap-1 rounded-full border border-dashed border-outline-gray-3 px-2.5 py-1 text-sm text-ink-gray-6 hover:bg-surface-gray-2"
+      class="inline-flex items-center gap-1 rounded-full bg-surface-gray-2 px-2.5 py-1 text-sm text-ink-gray-7 hover:bg-surface-gray-3"
       @click="openInput"
     >
       + {{ __('Add tag') }}
@@ -83,8 +126,10 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
 import { call, toast } from 'frappe-ui'
+import LucideTag from '~icons/lucide/tag'
+import LucideCheck from '~icons/lucide/check'
 import { useLiveSync } from '@/composables/useLiveSync'
 import {
   TAG_COLORS,
@@ -107,20 +152,31 @@ const local = computed(() => !props.docname)
 const tags = ref(local.value ? [...props.modelValue] : [])
 const adding = ref(false)
 const text = ref('')
+const root = ref(null)
+const formRef = ref(null)
 const inputRef = ref(null)
 const pickerFor = ref(null)
-
-const suggestions = computed(() => {
-  const q = clean(text.value).toLowerCase()
-  return allTags.value
-    .filter((s) => !tags.value.some((t) => t.toLowerCase() === s.toLowerCase()))
-    .filter((s) => !q || s.toLowerCase().includes(q))
-    .slice(0, 8)
-})
+const pickerAlign = ref('left')
+const openUp = ref(false)
 
 function clean(raw) {
   return (raw || '').replace(/[,#]/g, ' ').replace(/\s+/g, ' ').trim()
 }
+
+const has = (list, tag) => list.some((t) => t.toLowerCase() === tag.toLowerCase())
+
+const suggestions = computed(() => {
+  const q = clean(text.value).toLowerCase()
+  return allTags.value
+    .filter((s) => !has(tags.value, s))
+    .filter((s) => !q || s.toLowerCase().includes(q))
+})
+
+// offer "Create xyz" only when that exact tag does not exist yet
+const canCreate = computed(() => {
+  const q = clean(text.value)
+  return !!q && !has(allTags.value, q) && !has(tags.value, q)
+})
 
 async function load() {
   if (local.value) return
@@ -140,27 +196,25 @@ async function load() {
 
 async function addTag(raw) {
   const tag = clean(raw)
+  text.value = ''
   if (!tag) return
   // reuse the existing spelling if the tag already exists in another case
   const known = allTags.value.find((s) => s.toLowerCase() === tag.toLowerCase())
   const name = known || tag
-  text.value = ''
-  if (tags.value.some((t) => t.toLowerCase() === name.toLowerCase())) return
+  if (has(tags.value, name)) return
   const before = [...tags.value]
   tags.value = [...tags.value, name]
   if (local.value) {
     emit('update:modelValue', tags.value)
-    if (!known) setTagColor(name, colorOf(name).name).catch(() => {})
   } else {
     try {
-      await call('frappe.desk.doctype.tag.tag.add_tag', {
+      await call('crm.api.tags.add_tag', {
+        doctype: props.doctype,
+        name: String(props.docname),
         tag: name,
-        dt: props.doctype,
-        dn: String(props.docname),
+        color: colorOf(name).name,
       })
-      if (!known) {
-        await setTagColor(name, colorOf(name).name).catch(() => {})
-      }
+      loadTags(true)
     } catch (e) {
       tags.value = before
       toast.error(e?.messages?.[0] || __('Could not add the tag'))
@@ -178,15 +232,25 @@ async function removeTag(tag) {
     return
   }
   try {
-    await call('frappe.desk.doctype.tag.tag.remove_tag', {
+    await call('crm.api.tags.remove_tag', {
+      doctype: props.doctype,
+      name: String(props.docname),
       tag,
-      dt: props.doctype,
-      dn: String(props.docname),
     })
   } catch (e) {
     tags.value = before
     toast.error(e?.messages?.[0] || __('Could not remove the tag'))
   }
+}
+
+function togglePicker(tag, event) {
+  if (pickerFor.value === tag) {
+    pickerFor.value = null
+    return
+  }
+  const r = event.currentTarget.getBoundingClientRect()
+  pickerAlign.value = r.left + 176 > window.innerWidth - 8 ? 'right' : 'left'
+  pickerFor.value = tag
 }
 
 async function chooseColor(tag, color) {
@@ -200,8 +264,24 @@ async function chooseColor(tag, color) {
 }
 
 function openInput() {
+  pickerFor.value = null
   adding.value = true
-  nextTick(() => inputRef.value?.focus())
+  loadTags()
+  nextTick(() => {
+    inputRef.value?.focus()
+    const r = formRef.value?.getBoundingClientRect()
+    // open the list upward when there is little room below (end of a form, phone keyboard)
+    openUp.value = !!r && window.innerHeight - r.bottom < 260 && r.top > 260
+  })
+}
+
+// a comma ends the tag (works on phone keyboards too)
+function onInput() {
+  if (text.value.includes(',')) {
+    const [first, ...rest] = text.value.split(',')
+    addTag(first)
+    text.value = rest.join(' ')
+  }
 }
 
 function closeInput() {
@@ -210,16 +290,25 @@ function closeInput() {
 }
 
 function onBlur() {
-  // short delay so a tap on a suggestion is not lost
+  // short delay so a tap on a suggestion is not lost; typed text is kept as a tag, not thrown away
   setTimeout(() => {
-    if (document.activeElement !== inputRef.value) closeInput()
+    if (document.activeElement === inputRef.value) return
+    if (clean(text.value)) addTag(text.value)
+    closeInput()
   }, 150)
 }
+
+function onOutside(e) {
+  if (pickerFor.value && !e.target.closest?.('[data-tag-chip]')) pickerFor.value = null
+}
+
+onMounted(() => document.addEventListener('pointerdown', onOutside))
+onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
 
 watch(() => props.docname, load, { immediate: true })
 loadTags()
 
-// Tag changes do not bump "modified", so re-read when the user comes back and every 60 s.
+// Another device changed this record's tags (or the user came back to the tab): re-read quietly.
 if (!local.value) {
   useLiveSync(
     [props.doctype],
