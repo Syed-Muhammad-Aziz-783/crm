@@ -42,6 +42,13 @@ class CRMTask(Document):
 	def after_insert(self):
 		self.assign_to()
 
+	def on_trash(self):
+		# Royal: notifications about this task point back to it and make Frappe
+		# refuse the delete ("linked with CRM Notification"). Remove them first.
+		import frappe
+
+		frappe.db.delete("CRM Notification", {"reference_doctype": "CRM Task", "reference_docname": self.name})
+
 	def validate_required(self):
 		# Royal: a task needs a due date and an assignee. Old tasks that never had
 		# them can still be edited (for example marked Done); only new tasks, or
