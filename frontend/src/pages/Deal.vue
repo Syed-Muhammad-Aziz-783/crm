@@ -130,6 +130,7 @@
           </div>
         </div>
       </div>
+      <TagsBox doctype="CRM Deal" :docname="dealId" />
       <SLASection
         v-if="doc.sla_status"
         v-model="doc"
@@ -370,6 +371,7 @@ import Link from '@/components/Controls/Link.vue'
 import Section from '@/components/CollapsibleSection.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import SLASection from '@/components/SLASection.vue'
+import TagsBox from '@/components/TagsBox.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import EnrichFromWebsite from '@/components/EnrichFromWebsite.vue'
 import {

@@ -188,6 +188,7 @@
           </div>
         </template>
       </FileUploader>
+      <TagsBox doctype="CRM Lead" :docname="leadId" />
       <SLASection
         v-if="doc.sla_status"
         v-model="doc"
@@ -269,6 +270,7 @@ import AssignTo from '@/components/AssignTo.vue'
 import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import SLASection from '@/components/SLASection.vue'
+import TagsBox from '@/components/TagsBox.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import ConvertToDealModal from '@/components/Modals/ConvertToDealModal.vue'
 import EnrichFromWebsite from '@/components/EnrichFromWebsite.vue'
