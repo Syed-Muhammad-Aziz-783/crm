@@ -52,6 +52,7 @@
       />
     </div>
   </div>
+  <TagsBox v-if="doc.name" doctype="CRM Deal" :docname="dealId" />
   <div v-if="doc.name" class="flex h-full overflow-hidden">
     <Tabs
       v-model="activeTab"
@@ -61,7 +62,6 @@
     >
       <template #tab-panel="{ tab }">
         <div v-if="tab.name == 'Details'">
-          <TagsBox doctype="CRM Deal" :docname="dealId" />
           <SLASection
             v-if="doc.sla_status"
             v-model="doc"

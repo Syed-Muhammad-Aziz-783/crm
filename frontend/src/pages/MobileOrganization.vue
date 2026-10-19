@@ -83,6 +83,7 @@
         </div>
       </template>
     </FileUploader>
+    <TagsBox v-if="organization.doc?.name" doctype="CRM Organization" :docname="organization.doc.name" />
     <Tabs
       v-model="activeTab"
       as="div"
@@ -102,7 +103,6 @@
       </template>
       <template #tab-panel="{ tab }">
         <div v-if="tab.name == 'Details'">
-          <TagsBox v-if="organization.doc?.name" doctype="CRM Organization" :docname="organization.doc.name" />
           <div
             v-if="sections.data"
             class="flex flex-1 flex-col justify-between overflow-hidden"
