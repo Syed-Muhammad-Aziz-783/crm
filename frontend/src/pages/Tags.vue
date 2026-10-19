@@ -15,7 +15,7 @@
           type="text"
           maxlength="60"
           :placeholder="__('Tag name')"
-          class="h-8 min-w-0 flex-1 rounded-md bg-surface-gray-2 px-2.5 text-base text-ink-gray-9 placeholder:text-ink-gray-4 focus:bg-surface-gray-3 focus:outline-none"
+          class="h-8 w-full min-w-0 rounded-md sm:w-auto sm:flex-1 bg-surface-gray-2 px-2.5 text-base text-ink-gray-9 placeholder:text-ink-gray-4 focus:bg-surface-gray-3 focus:outline-none"
           @keydown.enter.prevent="createTag"
         />
         <div class="flex flex-wrap gap-2">
@@ -24,12 +24,7 @@
             :key="c.name"
             type="button"
             class="h-6 w-6 rounded-full"
-            :class="[
-              c.dot,
-              newColor === c.name
-                ? 'ring-2 ring-ink-gray-9 ring-offset-2 ring-offset-surface-base'
-                : '',
-            ]"
+            :style="swatchStyle(c, newColor === c.name)"
             :aria-label="c.name"
             @click="newColor = c.name"
           />
@@ -43,7 +38,7 @@
     </div>
     <div v-for="tag in allTags" :key="tag" class="border-b py-3">
       <div class="flex items-center gap-3">
-        <span class="min-w-0 truncate rounded-full px-2.5 py-1 text-sm" :class="colorOf(tag).chip">{{ tag }}</span>
+        <span class="min-w-0 truncate rounded-full px-2.5 py-1 text-sm" :style="chipStyle(tag)">{{ tag }}</span>
         <span class="shrink-0 text-sm text-ink-gray-5">
           {{ counts[tag] || 0 }} {{ __('records') }}
         </span>
@@ -62,12 +57,7 @@
           :key="c.name"
           type="button"
           class="h-6 w-6 rounded-full"
-          :class="[
-            c.dot,
-            colorOf(tag).name === c.name
-              ? 'ring-2 ring-ink-gray-9 ring-offset-2 ring-offset-surface-base'
-              : '',
-          ]"
+          :style="swatchStyle(c, colorOf(tag).name === c.name)"
           :aria-label="c.name"
           @click="changeColor(tag, c.name)"
         />
@@ -84,9 +74,11 @@ import { useLiveSync } from '@/composables/useLiveSync'
 import {
   TAG_COLORS,
   allTags,
+  chipStyle,
   colorOf,
   loadTags,
   setTagColor,
+  swatchStyle,
 } from '@/utils/tagColors'
 
 const newName = ref('')

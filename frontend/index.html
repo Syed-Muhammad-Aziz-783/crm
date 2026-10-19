@@ -7,6 +7,45 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
     />
     <title>Frappe CRM</title>
+    <script>
+      // Royal: if the app cannot start (old phone cache after an update), clear the cache once and reload.
+      (function () {
+        var KEY = 'royal_selfheal'
+        function heal() {
+          try {
+            if (sessionStorage.getItem(KEY)) return
+            sessionStorage.setItem(KEY, '1')
+          } catch (e) {
+            return
+          }
+          var jobs = []
+          if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+            jobs.push(
+              navigator.serviceWorker.getRegistrations().then(function (r) {
+                return Promise.all(r.map(function (x) { return x.unregister() }))
+              }),
+            )
+          }
+          if (window.caches && caches.keys) {
+            jobs.push(
+              caches.keys().then(function (k) {
+                return Promise.all(k.map(function (n) { return caches.delete(n) }))
+              }),
+            )
+          }
+          Promise.all(jobs).catch(function () {}).then(function () { location.reload() })
+        }
+        window.addEventListener('vite:preloadError', heal)
+        window.addEventListener('error', function (e) {
+          var t = e.target
+          if (t && t.tagName === 'SCRIPT' && t.src) heal()
+        }, true)
+        setTimeout(function () {
+          var a = document.getElementById('app')
+          if (a && !a.children.length) heal()
+        }, 10000)
+      })()
+    </script>
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Frappe CRM" />

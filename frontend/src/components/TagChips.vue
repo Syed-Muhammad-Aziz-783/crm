@@ -8,12 +8,13 @@
       v-for="t in shown"
       :key="t"
       class="max-w-[7rem] shrink-0 truncate whitespace-nowrap rounded-full px-2 py-0.5 text-sm"
-      :class="colorOf(t).chip"
+      :style="chipStyle(t)"
       >{{ t }}</span
     >
     <span
       v-if="extra > 0"
-      class="shrink-0 whitespace-nowrap rounded-full bg-gray-200 px-2 py-0.5 text-sm text-gray-700"
+      class="shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-sm"
+      style="background: #e5e7eb; color: #374151"
       >+{{ extra }}</span
     >
   </div>
@@ -21,7 +22,7 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
-import { colorOf, loadTags, parseTags } from '@/utils/tagColors'
+import { chipStyle, loadTags, parseTags } from '@/utils/tagColors'
 
 const props = defineProps({
   value: { type: [String, Object], default: '' },

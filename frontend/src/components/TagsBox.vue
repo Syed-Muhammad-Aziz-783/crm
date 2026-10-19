@@ -19,7 +19,7 @@
       :key="tag"
       data-tag-chip
       class="relative inline-flex max-w-full items-center rounded-full text-sm"
-      :class="colorOf(tag).chip"
+      :style="chipStyle(tag)"
     >
       <button
         type="button"
@@ -48,12 +48,7 @@
           :key="c.name"
           type="button"
           class="h-6 w-6 rounded-full"
-          :class="[
-            c.dot,
-            colorOf(tag).name === c.name
-              ? 'ring-2 ring-ink-gray-9 ring-offset-2 ring-offset-surface-elevation-2'
-              : '',
-          ]"
+          :style="swatchStyle(c, colorOf(tag).name === c.name)"
           :aria-label="c.name"
           @click="chooseColor(tag, c.name)"
         />
@@ -99,7 +94,7 @@
           class="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-base text-ink-gray-8 hover:bg-surface-gray-2"
           @mousedown.prevent="addTag(text)"
         >
-          <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="colorOf(clean(text)).dot" />
+          <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ background: colorOf(clean(text)).dot }" />
           <span class="truncate">{{ __('Create') }} "{{ clean(text) }}"</span>
         </button>
         <button
@@ -109,7 +104,7 @@
           class="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-base text-ink-gray-8 hover:bg-surface-gray-2"
           @mousedown.prevent="addTag(s)"
         >
-          <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="colorOf(s).dot" />
+          <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ background: colorOf(s).dot }" />
           <span class="truncate">{{ s }}</span>
         </button>
       </div>
@@ -134,8 +129,10 @@ import { useLiveSync } from '@/composables/useLiveSync'
 import {
   TAG_COLORS,
   allTags,
+  chipStyle,
   colorOf,
   loadTags,
+  swatchStyle,
   parseTags,
   setTagColor,
 } from '@/utils/tagColors'

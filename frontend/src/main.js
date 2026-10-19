@@ -70,6 +70,10 @@ if (import.meta.env.DEV) {
   socket = initSocket()
   app.config.globalProperties.$socket = socket
   app.mount('#app')
+  // started fine: allow the self-heal in index.html to work again next time
+  try {
+    sessionStorage.removeItem('royal_selfheal')
+  } catch (e) {}
 }
 
 if (import.meta.env.DEV) {

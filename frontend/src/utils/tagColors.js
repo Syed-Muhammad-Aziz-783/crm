@@ -1,19 +1,30 @@
 import { ref } from 'vue'
 import { call } from 'frappe-ui'
 
-// Royal: tag colors (like Odoo). Full class strings so Tailwind keeps them.
+// Royal: tag colors (like Odoo). Plain hex values (not Tailwind classes) so they always show,
+// whatever the Tailwind palette of the app contains.
 export const TAG_COLORS = [
-  { name: 'gray', chip: 'bg-gray-200 text-gray-800', dot: 'bg-gray-500' },
-  { name: 'red', chip: 'bg-red-100 text-red-800', dot: 'bg-red-500' },
-  { name: 'orange', chip: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500' },
-  { name: 'amber', chip: 'bg-amber-100 text-amber-800', dot: 'bg-amber-500' },
-  { name: 'green', chip: 'bg-green-100 text-green-800', dot: 'bg-green-500' },
-  { name: 'teal', chip: 'bg-teal-100 text-teal-800', dot: 'bg-teal-500' },
-  { name: 'blue', chip: 'bg-blue-100 text-blue-800', dot: 'bg-blue-500' },
-  { name: 'purple', chip: 'bg-purple-100 text-purple-800', dot: 'bg-purple-500' },
-  { name: 'pink', chip: 'bg-pink-100 text-pink-800', dot: 'bg-pink-500' },
-  { name: 'brown', chip: 'bg-stone-200 text-stone-800', dot: 'bg-stone-500' },
+  { name: 'gray', bg: '#e5e7eb', fg: '#374151', dot: '#6b7280' },
+  { name: 'red', bg: '#fee2e2', fg: '#991b1b', dot: '#ef4444' },
+  { name: 'orange', bg: '#ffedd5', fg: '#9a3412', dot: '#f97316' },
+  { name: 'amber', bg: '#fef3c7', fg: '#92400e', dot: '#f59e0b' },
+  { name: 'green', bg: '#dcfce7', fg: '#166534', dot: '#22c55e' },
+  { name: 'teal', bg: '#ccfbf1', fg: '#115e59', dot: '#14b8a6' },
+  { name: 'blue', bg: '#dbeafe', fg: '#1e40af', dot: '#3b82f6' },
+  { name: 'purple', bg: '#f3e8ff', fg: '#6b21a8', dot: '#a855f7' },
+  { name: 'pink', bg: '#fce7f3', fg: '#9d174d', dot: '#ec4899' },
+  { name: 'brown', bg: '#e7e5e4', fg: '#44403c', dot: '#78716c' },
 ]
+
+export const chipStyle = (tag) => {
+  const c = colorOf(tag)
+  return { background: c.bg, color: c.fg }
+}
+
+export const swatchStyle = (c, selected) => ({
+  background: c.dot,
+  boxShadow: selected ? '0 0 0 2px #fff, 0 0 0 4px #1f2937' : 'none',
+})
 
 // all known tags -> color name ('' = not chosen yet)
 export const tagColorMap = ref({})
