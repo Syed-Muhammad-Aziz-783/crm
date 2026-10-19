@@ -69,7 +69,7 @@
         </div>
       </div>
       <div v-if="!confirmDeleteInfo.show" class="px-4 pb-7 pt-0 sm:px-6">
-        <div class="flex flex-row-reverse gap-2">
+        <div class="flex flex-col-reverse gap-2 sm:flex-row-reverse [&>button]:w-full sm:[&>button]:w-auto">
           <Button
             v-if="linkedDocs?.length > 0"
             :label="

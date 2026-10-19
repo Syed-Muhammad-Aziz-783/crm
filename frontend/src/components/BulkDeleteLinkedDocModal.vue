@@ -31,7 +31,7 @@
         </div>
       </div>
       <div class="px-4 pb-7 pt-0 sm:px-6">
-        <div class="flex flex-row-reverse gap-2">
+        <div class="flex flex-col-reverse gap-2 sm:flex-row-reverse [&>button]:w-full sm:[&>button]:w-auto">
           <Button
             :label="__('Delete {0} items', [props.items.length])"
             icon-left="lucide-trash-2"
