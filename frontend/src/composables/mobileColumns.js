@@ -17,8 +17,8 @@ export function fitColumnsForMobile(columns, preferredKeys = [], count = 3) {
   }
   picked = picked.slice(0, count)
 
-  // screen width minus page margin (24px) and checkbox column (about 48px)
-  const usable = Math.max(window.innerWidth - 72, 200)
+  // screen width minus page margin, checkbox column and column gaps (about 120px)
+  const usable = Math.max(window.innerWidth - 120, 200)
   const weights = [0.4, 0.3, 0.3]
   return picked.map((col, i) => ({
     ...col,

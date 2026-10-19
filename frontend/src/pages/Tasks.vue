@@ -284,9 +284,10 @@ const columns = computed(() => {
     })
   }
 
+  // description first, so a task without a lead still shows its text
   return fitColumnsForMobile(_columns, [
+    'description',
     'lead_name',
-    'lead_phone',
     'due_date',
   ])
 })
