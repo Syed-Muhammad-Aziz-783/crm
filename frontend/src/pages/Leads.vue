@@ -296,7 +296,6 @@ import KanbanView from '@/components/Kanban/KanbanView.vue'
 import LeadModal from '@/components/Modals/LeadModal.vue'
 import ViewControls from '@/components/ViewControls.vue'
 import { useDoctypeModal } from '@/composables/doctypeModal'
-import { fitColumnsForMobile } from '@/composables/mobileColumns'
 import { getMeta } from '@/stores/meta'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
@@ -379,7 +378,7 @@ const columns = computed(() => {
     })
   }
 
-  return fitColumnsForMobile(_columns)
+  return _columns
 })
 
 function getGroupedByRows(listRows, groupByField, columns) {

@@ -67,55 +67,14 @@ class CRMTask(Document):
 
 	@staticmethod
 	def default_list_data():
+		# Royal: Due Date, Lead Name, Phone, Description, Status, Assigned To
 		columns = [
-			{
-				"label": "Lead Name",
-				"type": "Data",
-				"key": "lead_name",
-				"width": "14rem",
-			},
-			{
-				"label": "Phone",
-				"type": "Data",
-				"key": "lead_phone",
-				"width": "10rem",
-			},
-			{
-				"label": "Title",
-				"type": "Data",
-				"key": "title",
-				"width": "16rem",
-			},
-			{
-				"label": "Status",
-				"type": "Select",
-				"key": "status",
-				"width": "8rem",
-			},
-			{
-				"label": "Priority",
-				"type": "Select",
-				"key": "priority",
-				"width": "8rem",
-			},
-			{
-				"label": "Due Date",
-				"type": "Date",
-				"key": "due_date",
-				"width": "8rem",
-			},
-			{
-				"label": "Assigned To",
-				"type": "Link",
-				"key": "assigned_to",
-				"width": "10rem",
-			},
-			{
-				"label": "Last Modified",
-				"type": "Datetime",
-				"key": "modified",
-				"width": "8rem",
-			},
+			{"label": "Due Date", "type": "Date", "key": "due_date", "width": "8rem"},
+			{"label": "Lead Name", "type": "Data", "key": "lead_name", "width": "14rem"},
+			{"label": "Phone", "type": "Data", "key": "lead_phone", "width": "10rem"},
+			{"label": "Description", "type": "Text Editor", "key": "description", "width": "16rem"},
+			{"label": "Status", "type": "Select", "key": "status", "width": "8rem"},
+			{"label": "Assigned To", "type": "Link", "key": "assigned_to", "width": "10rem"},
 		]
 
 		rows = [

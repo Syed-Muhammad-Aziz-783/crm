@@ -219,7 +219,6 @@ import EmptyState from '@/components/ListViews/EmptyState.vue'
 import KanbanView from '@/components/Kanban/KanbanView.vue'
 import DeleteLinkedDocModal from '@/components/DeleteLinkedDocModal.vue'
 import { useDoctypeModal } from '@/composables/doctypeModal'
-import { fitColumnsForMobile } from '@/composables/mobileColumns'
 import { getMeta } from '@/stores/meta'
 import { usersStore } from '@/stores/users'
 import { formatDate, sanitizeHTML } from '@/utils'
@@ -284,12 +283,7 @@ const columns = computed(() => {
     })
   }
 
-  // description first, so a task without a lead still shows its text
-  return fitColumnsForMobile(_columns, [
-    'description',
-    'lead_name',
-    'due_date',
-  ])
+  return _columns
 })
 
 function getKanbanRows(data, columns) {
