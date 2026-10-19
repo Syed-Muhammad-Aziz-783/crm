@@ -369,11 +369,11 @@ const rows = computed(() => {
 const columns = computed(() => {
   let _columns = leads.value?.data?.columns || []
 
-  // Set align right for last column
+  // Royal: last column is centered like the rest
   if (_columns.length) {
     _columns = _columns.map((col, index) => {
       if (index === _columns.length - 1) {
-        return { ...col, align: 'right' }
+        return { ...col, align: 'center' }
       }
       return col
     })
