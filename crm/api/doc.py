@@ -666,38 +666,36 @@ ROYAL_COUNT_COLUMNS = ("_task_count", "_note_count")
 
 
 def royal_add_counts(data, doctype, rows):
-	"""Fill _task_count (open tasks) and _note_count when a list asks for them."""
+	"""Fill _task_count (open tasks) and _note_count when a list asks for them.
+	Never breaks the list: on any error the cells show "-" and the error is logged."""
 	if not data or not any(r in rows for r in ROYAL_COUNT_COLUMNS):
 		return
-	names = [d.get("name") for d in data]
-	if "_task_count" in rows:
-		counts = {
-			r.reference_docname: r.c
-			for r in frappe.get_all(
-				"CRM Task",
-				filters={
-					"reference_doctype": doctype,
-					"reference_docname": ["in", names],
-					"status": ["not in", ["Done", "Canceled"]],
-				},
-				fields=["reference_docname", "count(name) as c"],
-				group_by="reference_docname",
+	names = tuple(d.get("name") for d in data)
+
+	def grouped(table, extra=""):
+		return dict(
+			frappe.db.sql(
+				f"select reference_docname, count(*) from `tab{table}` "
+				f"where reference_doctype=%s and reference_docname in %s {extra} "
+				"group by reference_docname",
+				(doctype, names),
 			)
-		}
+		)
+
+	try:
+		if "_task_count" in rows:
+			counts = grouped("CRM Task", "and status not in ('Done', 'Canceled')")
+			for d in data:
+				d["_task_count"] = str(counts.get(str(d.get("name")), 0))
+		if "_note_count" in rows:
+			counts = grouped("FCRM Note")
+			for d in data:
+				d["_note_count"] = str(counts.get(str(d.get("name")), 0))
+	except Exception:
+		frappe.log_error(title="Royal counts failed")
 		for d in data:
-			d["_task_count"] = str(counts.get(d.get("name"), 0))
-	if "_note_count" in rows:
-		counts = {
-			r.reference_docname: r.c
-			for r in frappe.get_all(
-				"FCRM Note",
-				filters={"reference_doctype": doctype, "reference_docname": ["in", names]},
-				fields=["reference_docname", "count(name) as c"],
-				group_by="reference_docname",
-			)
-		}
-		for d in data:
-			d["_note_count"] = str(counts.get(d.get("name"), 0))
+			d.setdefault("_task_count", "-")
+			d.setdefault("_note_count", "-")
 
 
 def getCounts(d, doctype):
