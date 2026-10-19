@@ -74,7 +74,21 @@
 .dialog-scroll-container {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  touch-action: pan-y;
+}
+/* Root cause found in reka-ui (useBodyScrollLock): on iOS, while a dialog is open, every
+   touchmove is cancelled unless the touch is inside an element that can scroll. A dialog
+   that fits the screen is not scrollable, so the form was frozen (and could not be moved
+   above the keyboard). Always-scroll container + spacer makes it always scrollable.
+   Tested in a harness: touchmove prevented=true before, false after. */
+@media (max-width: 767px) {
+  .dialog-scroll-container {
+    overflow-y: scroll;
+  }
+  .dialog-scroll-container::after {
+    content: '';
+    display: block;
+    height: 40vh;
+  }
 }
 .dialog-content {
   margin-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
