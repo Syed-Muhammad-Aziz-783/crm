@@ -634,8 +634,9 @@ const field = computed(() => {
 
   // Royal: a task needs a due date and an assignee
   const royalRequired =
-    unref(doctype) === 'CRM Task' &&
-    ['due_date', 'assigned_to'].includes(field.fieldname)
+    (unref(doctype) === 'CRM Task' &&
+      ['due_date', 'assigned_to'].includes(field.fieldname)) ||
+    (unref(doctype) === 'CRM Lead' && field.fieldname === 'lead_owner')
 
   let _field = {
     ...field,

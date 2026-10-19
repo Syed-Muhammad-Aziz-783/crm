@@ -1,0 +1,19 @@
+/* Royal: red dot under today's date in the desk date picker (today is only bold otherwise) */
+.datepicker--cell.-current- {
+	position: relative;
+	font-weight: 700;
+}
+.datepicker--cell.-current-::after {
+	content: "";
+	position: absolute;
+	bottom: 3px;
+	left: 50%;
+	width: 5px;
+	height: 5px;
+	margin-left: -2.5px;
+	border-radius: 50%;
+	background: #dc2626;
+}
+.royal-copy-btn {
+	margin-top: 4px;
+}

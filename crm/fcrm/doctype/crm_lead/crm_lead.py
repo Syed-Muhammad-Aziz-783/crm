@@ -127,7 +127,13 @@ class CRMLead(Document):
 			):
 				frappe.db.set_value("CRM Task", name, values, update_modified=False)
 
+	def validate_owner(self):
+		# Royal: every new lead needs a Lead Owner (web forms from Guest are left alone)
+		if self.is_new() and not self.lead_owner and frappe.session.user != "Guest":
+			frappe.throw(_("Lead Owner is required"), frappe.MandatoryError)
+
 	def validate(self):
+		self.validate_owner()
 		self.validate_status()
 		self.set_full_name()
 		self.set_lead_name()
