@@ -108,7 +108,7 @@
 </template>
 
 <script setup>
-import { Dialog, call } from 'frappe-ui'
+import { Dialog, call, toast } from 'frappe-ui'
 import { ref } from 'vue'
 
 const show = defineModel({ type: Boolean })
@@ -147,18 +147,33 @@ const confirmUnlink = () => {
   }
 }
 
+const simpleDelete = ['CRM Lead', 'CRM Deal', 'CRM Task'].includes(
+  props.doctype,
+)
+
 const deleteDocs = () => {
-  call('crm.api.doc.delete_bulk_docs', {
-    items: props.items,
-    doctype: props.doctype,
-    delete_linked: confirmDeleteInfo.value.delete,
-  }).then(() => {
-    confirmDeleteInfo.value = {
-      show: false,
-      title: '',
-    }
-    show.value = false
-    props.reload()
-  })
+  // Royal: Leads, Deals and Tasks use the one-click delete that clears linked items
+  const request = simpleDelete
+    ? call('crm.api.doc.royal_delete_bulk', {
+        items: props.items,
+        doctype: props.doctype,
+      })
+    : call('crm.api.doc.delete_bulk_docs', {
+        items: props.items,
+        doctype: props.doctype,
+        delete_linked: confirmDeleteInfo.value.delete,
+      })
+  request
+    .then(() => {
+      confirmDeleteInfo.value = {
+        show: false,
+        title: '',
+      }
+      show.value = false
+      props.reload()
+    })
+    .catch((err) => {
+      toast.error(err?.messages?.[0] || err?.message || __('Could not delete'))
+    })
 }
 </script>

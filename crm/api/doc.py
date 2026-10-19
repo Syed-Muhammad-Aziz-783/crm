@@ -844,13 +844,7 @@ def delete_bulk_docs(doctype: str, items: str | list, delete_linked: bool = Fals
 	return "success"
 
 
-@frappe.whitelist(methods=["POST"])
-def royal_delete(doctype: str, name: str):
-	# Royal: one-click delete for Leads, Deals and Tasks. Removes what hangs off the record
-	# (notifications, and for leads/deals their tasks and notes) so nothing blocks the delete.
-	if doctype not in ("CRM Lead", "CRM Deal", "CRM Task"):
-		frappe.throw(_("Not allowed for {0}").format(doctype), frappe.PermissionError)
-
+def _royal_delete_one(doctype: str, name: str):
 	if not frappe.has_permission(doctype, "delete", name):
 		frappe.throw(_("You do not have permission to delete this record"), frappe.PermissionError)
 
@@ -864,4 +858,33 @@ def royal_delete(doctype: str, name: str):
 				frappe.delete_doc(child, child_name, force=True, ignore_permissions=True)
 
 	frappe.delete_doc(doctype, name, force=True)
+
+
+@frappe.whitelist(methods=["POST"])
+def royal_delete(doctype: str, name: str):
+	# Royal: one-click delete for Leads, Deals and Tasks. Removes what hangs off the record
+	# (notifications, and for leads/deals their tasks and notes) so nothing blocks the delete.
+	# Any failure is turned into a readable message instead of a bare "Internal Server Error".
+	import traceback
+
+	if doctype not in ("CRM Lead", "CRM Deal", "CRM Task"):
+		frappe.throw(_("Not allowed for {0}").format(doctype), frappe.PermissionError)
+
+	try:
+		_royal_delete_one(doctype, name)
+	except (frappe.PermissionError, frappe.ValidationError):
+		raise
+	except Exception as e:
+		tb = traceback.format_exc()
+		frappe.log_error(tb, f"Royal delete failed: {doctype} {name}")
+		last = [line for line in tb.strip().splitlines() if line.strip()][-4:]
+		frappe.throw(f"Delete failed: {type(e).__name__}: {e} | " + " | ".join(l.strip() for l in last))
+	return "success"
+
+
+@frappe.whitelist(methods=["POST"])
+def royal_delete_bulk(doctype: str, items: str | list):
+	items = frappe.parse_json(items) if isinstance(items, str) else items
+	for name in items or []:
+		royal_delete(doctype, name)
 	return "success"

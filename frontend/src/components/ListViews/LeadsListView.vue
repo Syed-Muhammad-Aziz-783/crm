@@ -89,8 +89,10 @@
               size="sm"
             />
           </div>
-          <div v-else-if="column.key === 'mobile_no' && item">
-            <PhoneIcon class="h-4 w-4" />
+          <div
+            v-else-if="['mobile_no', 'phone', 'lead_phone'].includes(column.key) && item"
+          >
+            <CopyPhone :value="item" />
           </div>
         </template>
         <template #default="{ label }">
@@ -245,7 +247,7 @@
 <script setup>
 import HeartIcon from '@/components/Icons/HeartIcon.vue'
 import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
-import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
+import CopyPhone from '@/components/CopyPhone.vue'
 import RatingInput from '@/components/Controls/RatingInput.vue'
 import MultipleAvatar from '@/components/MultipleAvatar.vue'
 import ListBulkActions from '@/components/ListBulkActions.vue'

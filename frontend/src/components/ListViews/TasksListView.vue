@@ -67,6 +67,9 @@
           <div v-else-if="column.key === 'priority'">
             <TaskPriorityIcon :priority="item" />
           </div>
+          <div v-else-if="column.key === 'lead_phone' && item">
+            <CopyPhone :value="item" />
+          </div>
           <div v-else-if="column.key === 'assigned_to'">
             <Avatar
               v-if="item.full_name"
@@ -189,6 +192,7 @@
   />
 </template>
 <script setup>
+import CopyPhone from '@/components/CopyPhone.vue'
 import HeartIcon from '@/components/Icons/HeartIcon.vue'
 import TaskStatusIcon from '@/components/Icons/TaskStatusIcon.vue'
 import TaskPriorityIcon from '@/components/Icons/TaskPriorityIcon.vue'
