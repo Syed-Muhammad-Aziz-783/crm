@@ -32,7 +32,7 @@
                 class="column flex flex-col gap-1.5 overflow-y-auto"
               >
                 <template
-                  v-for="field in (section.columns[0].fields || []).filter((f) => f.fieldname !== 'mobile_no')"
+                  v-for="field in royalPhoneFields(section.columns[0].fields)"
                   :key="field.fieldname"
                 >
                   <div
@@ -445,6 +445,7 @@ import Link from '@/components/Controls/Link.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import SidePanelModal from '@/components/Modals/SidePanelModal.vue'
 import { toast } from 'frappe-ui'
+import { royalPhoneFields } from '@/utils/royalPhone'
 import { getMeta } from '@/stores/meta'
 import { parseLinkFilters } from '@/utils/fieldTransforms'
 import { usersStore } from '@/stores/users'

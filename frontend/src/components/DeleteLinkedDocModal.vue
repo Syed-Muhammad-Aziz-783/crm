@@ -194,7 +194,11 @@ const linkedDocsResource = createResource({
   },
 })
 
+// Royal: Leads, Deals and Tasks are deleted in one click; linked items go with them
+const simpleDelete = ['CRM Lead', 'CRM Deal', 'CRM Task'].includes(props.doctype)
+
 const linkedDocs = computed(() => {
+  if (simpleDelete) return []
   return (
     linkedDocsResource.data?.map((doc) => ({
       id: doc.reference_docname,
@@ -279,7 +283,7 @@ const deleteDoc = async () => {
   // resource before this awaited call resolves on the frontend.
   markDocumentAsDeleted(props.doctype, props.docname)
   try {
-    await call('frappe.client.delete', {
+    await call(simpleDelete ? 'crm.api.doc.royal_delete' : 'frappe.client.delete', {
       doctype: props.doctype,
       name: props.docname,
     })

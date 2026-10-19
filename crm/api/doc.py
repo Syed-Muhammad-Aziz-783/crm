@@ -842,3 +842,26 @@ def delete_bulk_docs(doctype: str, items: str | list, delete_linked: bool = Fals
 	else:
 		delete_bulk(doctype, items)
 	return "success"
+
+
+@frappe.whitelist(methods=["POST"])
+def royal_delete(doctype: str, name: str):
+	# Royal: one-click delete for Leads, Deals and Tasks. Removes what hangs off the record
+	# (notifications, and for leads/deals their tasks and notes) so nothing blocks the delete.
+	if doctype not in ("CRM Lead", "CRM Deal", "CRM Task"):
+		frappe.throw(_("Not allowed for {0}").format(doctype), frappe.PermissionError)
+
+	if not frappe.has_permission(doctype, "delete", name):
+		frappe.throw(_("You do not have permission to delete this record"), frappe.PermissionError)
+
+	frappe.db.delete("CRM Notification", {"reference_doctype": doctype, "reference_docname": name})
+
+	if doctype in ("CRM Lead", "CRM Deal"):
+		for child in ("CRM Task", "FCRM Note"):
+			for child_name in frappe.get_all(
+				child, filters={"reference_doctype": doctype, "reference_docname": name}, pluck="name"
+			):
+				frappe.delete_doc(child, child_name, force=True, ignore_permissions=True)
+
+	frappe.delete_doc(doctype, name, force=True)
+	return "success"

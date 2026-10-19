@@ -14,13 +14,12 @@
 <script setup>
 import Field from '@/components/FieldLayout/Field.vue'
 import { computed } from 'vue'
+import { royalPhoneFields } from '@/utils/royalPhone'
 
 const props = defineProps({
   column: { type: Object, required: true },
 })
 
 // Royal: one phone field only. Mobile No is hidden everywhere, the server keeps it equal to Phone.
-const visibleFields = computed(() =>
-  (props.column.fields || []).filter((f) => f.fieldname !== 'mobile_no'),
-)
+const visibleFields = computed(() => royalPhoneFields(props.column.fields))
 </script>
