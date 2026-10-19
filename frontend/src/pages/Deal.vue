@@ -384,6 +384,7 @@ import { globalStore } from '@/stores/global'
 import { statusesStore } from '@/stores/statuses'
 import { getMeta } from '@/stores/meta'
 import { useDocument } from '@/data/document'
+import { useLiveSync } from '@/composables/useLiveSync'
 import { whatsappEnabled } from '@/composables/whatsapp'
 import { canViewQuotations } from '@/composables/erpnext'
 import { callEnabled } from '@/composables/telephony'
@@ -987,6 +988,16 @@ function deleteDeal() {
 }
 
 const activities = ref(null)
+
+// Royal: live sync - the record, its activities, tasks and notes refresh by themselves
+useLiveSync(
+  ['CRM Deal', 'CRM Task', 'FCRM Note', 'Comment', 'Communication', 'ToDo', 'CRM Call Log'],
+  () => {
+    document.reload?.()
+    activities.value?.all_activities?.reload?.()
+  },
+  { skipWhenTyping: true },
+)
 
 function openEmailBox() {
   if (!['emails', 'comments', 'activities'].includes(activeTab.value)) {

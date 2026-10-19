@@ -285,6 +285,7 @@ import { globalStore } from '@/stores/global'
 import { statusesStore } from '@/stores/statuses'
 import { getMeta } from '@/stores/meta'
 import { useDocument } from '@/data/document'
+import { useLiveSync } from '@/composables/useLiveSync'
 import { whatsappEnabled } from '@/composables/whatsapp'
 import { callEnabled } from '@/composables/telephony'
 import { useCommandPaletteContext } from '@/composables/useCommandPalette'
@@ -322,6 +323,16 @@ const props = defineProps({
 
 const reload = ref(false)
 const activities = ref(null)
+
+// Royal: live sync - the record, its activities, tasks and notes refresh by themselves
+useLiveSync(
+  ['CRM Lead', 'CRM Task', 'FCRM Note', 'Comment', 'Communication', 'ToDo', 'CRM Call Log'],
+  () => {
+    document.reload?.()
+    activities.value?.all_activities?.reload?.()
+  },
+  { skipWhenTyping: true },
+)
 const errorTitle = ref('')
 const errorMessage = ref('')
 const showDeleteLinkedDocModal = ref(false)

@@ -375,6 +375,7 @@ import {
 } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { isMobileView } from '@/composables/settings'
+import { useLiveSync } from '@/composables/useLiveSync'
 import { closedConfig, useShowClosed } from '@/composables/closedToggle'
 import {
   commandPaletteOpen,
@@ -663,6 +664,15 @@ function onEnrichmentDone(data) {
   }
 }
 
+// Royal: live sync - the list refreshes by itself when anything it shows changes
+useLiveSync(
+  [...new Set([props.doctype, 'CRM Task', 'FCRM Note'])],
+  () => {
+    if (!listResource.loading) listResource.reload()
+  },
+  { pollSeconds: 60, skipWhenTyping: true },
+)
+
 onMounted(() => {
   $socket?.on('domain_enrichment_progress', onEnrichmentDone)
 })
@@ -679,8 +689,15 @@ function getListParams() {
 }
 
 function reload() {
-  if (isLoading.value) return
-  listResource.params = getParams()
+  // Royal: keep the filters the user has set now (the saved view can be older),
+  // and never silently drop a click because a load is still running.
+  const current = listResource.params?.filters
+  const params = getParams()
+  if (current) {
+    params.filters = current
+    params.default_filters = effectiveFilters(current)
+  }
+  listResource.params = params
   listResource.reload()
 }
 
@@ -1180,6 +1197,10 @@ function updateFilter(filters) {
   }
   listResource.params = defaultParams.value
   listResource.params.filters = filters
+  // Royal: the server lets default_filters override the user's filters, so it must
+  // be rebuilt for the NEW filters. A stale copy (still hiding Won/Lost) made a
+  // chosen status like "Lost" show New Leads until the page was refreshed.
+  listResource.params.default_filters = effectiveFilters(filters)
   view.value.filters = filters
   listResource.reload()
 
