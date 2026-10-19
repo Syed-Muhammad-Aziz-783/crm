@@ -39,3 +39,20 @@
 .mention[data-id] {
   cursor: default;
 }
+
+/* Royal: red dot under today's date in the date pickers.
+   frappe-ui marks today only with "(Today)" at the end of the cell aria-label. */
+[role='gridcell'][aria-label$='(Today)'] {
+  position: relative;
+}
+[role='gridcell'][aria-label$='(Today)']::after {
+  content: '';
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 9999px;
+  background-color: #dc2626;
+}

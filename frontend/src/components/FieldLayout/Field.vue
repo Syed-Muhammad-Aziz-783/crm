@@ -314,20 +314,32 @@
       :disabled="Boolean(field.disabled)"
       @change="(v) => fieldChange(v, field)"
     />
-    <FormControl
-      v-else-if="field.options === 'Phone'"
-      type="text"
-      :placeholder="getPlaceholder(field)"
-      :value="data[field.fieldname]"
-      :disabled="Boolean(field.disabled)"
-      :description="field.description"
-      :error="
-        Boolean(data[field.fieldname]) && !validatePhone(data[field.fieldname])
-          ? __('Enter a valid phone number')
-          : undefined
-      "
-      @change="fieldChange($event.target.value, field)"
-    />
+    <div v-else-if="field.options === 'Phone'" class="flex items-start gap-1">
+      <FormControl
+        class="flex-1"
+        type="text"
+        :placeholder="getPlaceholder(field)"
+        :value="data[field.fieldname]"
+        :disabled="Boolean(field.disabled)"
+        :description="field.description"
+        :error="
+          Boolean(data[field.fieldname]) &&
+          !validatePhone(data[field.fieldname])
+            ? __('Enter a valid phone number')
+            : undefined
+        "
+        @change="fieldChange($event.target.value, field)"
+      />
+      <!-- Royal: copy the number with one tap -->
+      <Button
+        v-if="data[field.fieldname]"
+        variant="subtle"
+        icon="lucide-copy"
+        :aria-label="__('Copy number')"
+        :title="__('Copy number')"
+        @click.stop.prevent="copyText(data[field.fieldname])"
+      />
+    </div>
     <div v-else class="flex items-center gap-1">
       <FormControl
         class="flex-1"
@@ -387,12 +399,14 @@ import { useDocument } from '@/data/document'
 import { injectEnrichedFieldnames } from '@/data/enrichedFields'
 
 import {
+  Button,
   Combobox,
   Select,
   Tooltip,
   DatePicker,
   DateTimePicker,
   TimePicker,
+  toast,
 } from 'frappe-ui'
 import { computed, provide, inject, ref, h, unref } from 'vue'
 
@@ -401,6 +415,25 @@ const props = defineProps({
 })
 
 const data = inject('data')
+
+async function copyText(text) {
+  const value = String(text ?? '').trim()
+  if (!value) return
+  try {
+    await navigator.clipboard.writeText(value)
+  } catch {
+    // older browsers or non-secure pages: fall back to a hidden textarea
+    const el = window.document.createElement('textarea')
+    el.value = value
+    el.style.position = 'fixed'
+    el.style.opacity = '0'
+    window.document.body.appendChild(el)
+    el.select()
+    window.document.execCommand('copy')
+    window.document.body.removeChild(el)
+  }
+  toast.success(__('Copied'))
+}
 const doctype = inject('doctype')
 const isNote = computed(() => unref(doctype) === 'FCRM Note')
 const docname = inject('docname', null)
@@ -599,8 +632,14 @@ const field = computed(() => {
     data.value,
   )
 
+  // Royal: a task needs a due date and an assignee
+  const royalRequired =
+    unref(doctype) === 'CRM Task' &&
+    ['due_date', 'assigned_to'].includes(field.fieldname)
+
   let _field = {
     ...field,
+    reqd: royalRequired ? 1 : field.reqd,
     filters: parseLinkFilters(field.link_filters),
     placeholder: field.placeholder || field.label,
     display_via_depends_on: displayViaDependsOn,

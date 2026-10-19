@@ -42,7 +42,22 @@ class CRMTask(Document):
 	def after_insert(self):
 		self.assign_to()
 
+	def validate_required(self):
+		# Royal: a task needs a due date and an assignee. Old tasks that never had
+		# them can still be edited (for example marked Done); only new tasks, or
+		# clearing a value that was set, are blocked.
+		import frappe
+		from frappe import _
+
+		before = None if self.is_new() else self.get_doc_before_save()
+		for fieldname, label in (("due_date", "Due Date"), ("assigned_to", "Assigned To")):
+			if self.get(fieldname):
+				continue
+			if self.is_new() or (before and before.get(fieldname)):
+				frappe.throw(_("{0} is required").format(_(label)), frappe.MandatoryError)
+
 	def validate(self):
+		self.validate_required()
 		if self.is_new() or not self.assigned_to:
 			return
 
