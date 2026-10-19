@@ -217,7 +217,9 @@
         </template>
       </ListRowItem>
     </ListRows>
-    <ListSelectBanner>
+    <ListSelectBanner
+      class="!min-w-0 max-w-[calc(100vw-1.5rem)] sm:!min-w-[596px]"
+    >
       <template #actions="{ selections, unselectAll }">
         <Dropdown
           :options="listBulkActionsRef.bulkActions(selections, unselectAll)"

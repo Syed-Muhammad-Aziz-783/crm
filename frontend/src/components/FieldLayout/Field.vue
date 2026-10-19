@@ -383,7 +383,6 @@ import {
 } from '@/utils/fieldTransforms'
 import { isFetchedFromLink } from '@/utils/fetchFrom'
 import { usersStore } from '@/stores/users'
-import { sessionStore } from '@/stores/session'
 import { useDocument } from '@/data/document'
 import { injectEnrichedFieldnames } from '@/data/enrichedFields'
 
@@ -429,8 +428,7 @@ if (doctype) {
     formatCurrency(doc[fn], '', window.sysdefaults?.currency || 'USD', null)
 }
 
-const { users, getUser, isManager } = usersStore()
-const { user: sessionUser } = sessionStore()
+const { users, getUser } = usersStore()
 
 let triggerOnChange
 let triggerButton
@@ -562,18 +560,9 @@ const field = computed(() => {
 
   if (field.fieldtype === 'Link' && field.options === 'User') {
     field.fieldtype = 'User'
-    // Royal: Sales Users can assign tasks to themselves only
-    const selfOnly =
-      doctype === 'CRM Task' &&
-      field.fieldname === 'assigned_to' &&
-      !isManager(sessionUser)
+    // Royal: everyone can assign tasks to any CRM user (self-only rule removed)
     field.link_filters = JSON.stringify({
-      name: [
-        'in',
-        selfOnly
-          ? [sessionUser]
-          : users.data.crmUsers?.map((user) => user.name),
-      ],
+      name: ['in', users.data.crmUsers?.map((user) => user.name)],
       ignore_user_type: 1,
       ...(parseLinkFilters(field.link_filters) || {}),
     })

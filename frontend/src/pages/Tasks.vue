@@ -219,6 +219,7 @@ import EmptyState from '@/components/ListViews/EmptyState.vue'
 import KanbanView from '@/components/Kanban/KanbanView.vue'
 import DeleteLinkedDocModal from '@/components/DeleteLinkedDocModal.vue'
 import { useDoctypeModal } from '@/composables/doctypeModal'
+import { fitColumnsForMobile } from '@/composables/mobileColumns'
 import { getMeta } from '@/stores/meta'
 import { usersStore } from '@/stores/users'
 import { formatDate, sanitizeHTML } from '@/utils'
@@ -283,7 +284,11 @@ const columns = computed(() => {
     })
   }
 
-  return _columns
+  return fitColumnsForMobile(_columns, [
+    'lead_name',
+    'lead_phone',
+    'due_date',
+  ])
 })
 
 function getKanbanRows(data, columns) {

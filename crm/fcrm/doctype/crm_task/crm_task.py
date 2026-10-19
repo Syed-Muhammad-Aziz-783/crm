@@ -39,29 +39,10 @@ class CRMTask(Document):
 			text = " ".join(strip_html(self.description or "").split())
 			self.title = text[:80] or self.get("lead_name") or "Task"
 
-	def check_assign_rule(self):
-		# Royal: Sales Users can assign tasks to themselves only.
-		# System Manager / Sales Manager can assign to anyone.
-		import frappe
-		from crm.permissions.sales_user_scope import _full_access
-
-		user = frappe.session.user
-		if not self.assigned_to or _full_access(user):
-			return
-		if self.assigned_to == user:
-			return
-		# unchanged value on an old task (set by a manager) stays allowed
-		if not self.is_new():
-			before = self.get_doc_before_save()
-			if before and before.assigned_to == self.assigned_to:
-				return
-		frappe.throw("You can assign tasks to yourself only.", frappe.PermissionError)
-
 	def after_insert(self):
 		self.assign_to()
 
 	def validate(self):
-		self.check_assign_rule()
 		if self.is_new() or not self.assigned_to:
 			return
 

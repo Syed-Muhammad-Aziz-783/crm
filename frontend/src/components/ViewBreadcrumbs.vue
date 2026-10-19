@@ -1,5 +1,14 @@
 <template>
   <div class="flex items-center">
+    <!-- Royal: small home button (like old Frappe breadcrumbs), goes to the desk home -->
+    <a
+      href="/desk"
+      class="mr-1 flex items-center rounded p-1 text-ink-gray-5 hover:text-ink-gray-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
+      :title="__('Home')"
+      :aria-label="__('Home')"
+    >
+      <span class="lucide-home size-4" aria-hidden="true" />
+    </a>
     <router-link
       :to="{ name: routeName }"
       class="px-0.5 py-1 text-lg-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
