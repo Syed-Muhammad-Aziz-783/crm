@@ -56,3 +56,26 @@
   border-radius: 9999px;
   background-color: #dc2626;
 }
+
+/* Royal: iPhone fix. On iOS (Chrome and the home-screen app) 100vh is taller than the
+   visible screen, so the Create / Save buttons and the bottom of forms sat below the
+   screen and could not be scrolled to. dvh follows the real visible height. */
+@supports (height: 100dvh) {
+  html .h-screen {
+    height: 100dvh;
+  }
+  html .min-h-screen {
+    min-height: 100dvh;
+  }
+  html .dialog-scroll-container {
+    height: 100dvh;
+  }
+}
+.dialog-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+.dialog-content {
+  margin-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+}
