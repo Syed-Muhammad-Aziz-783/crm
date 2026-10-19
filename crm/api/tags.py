@@ -82,3 +82,32 @@ def add_tags_to_doc(doctype: str, name: str | int, tags: str | list, colors: str
 		if colors.get(tag) in COLORS:
 			set_tag_color(tag, colors[tag])
 	return dt.get_tags(name)
+
+
+@frappe.whitelist()
+def get_tag_counts():
+	"""How many records use each tag (Tag Link rows)."""
+	_check_user()
+	rows = frappe.db.sql("select tag, count(*) from `tabTag Link` group by tag")
+	return {r[0]: r[1] for r in rows}
+
+
+@frappe.whitelist()
+def delete_tag(tag: str):
+	"""Remove a tag from every record, then delete it. Managers only."""
+	frappe.only_for(("System Manager", "Sales Manager"))
+	tag = _clean(tag)
+	if not frappe.db.exists("Tag", tag):
+		return
+	links = frappe.get_all(
+		"Tag Link",
+		filters={"tag": tag},
+		fields=["document_type", "document_name"],
+		limit_page_length=0,
+	)
+	for link in links:
+		try:
+			DocTags(link.document_type).remove(link.document_name, tag)
+		except Exception:
+			frappe.log_error(title="Royal tag delete: could not strip tag from a record")
+	frappe.delete_doc("Tag", tag, ignore_permissions=True, force=True)

@@ -28,6 +28,7 @@ export const standardFieldsMeta = [
     options: 'User',
   },
   { label: 'Like', fieldtype: 'Data', fieldname: '_liked_by' },
+  { label: 'Tags', fieldtype: 'Data', fieldname: '_user_tags' },
 ]
 
 export const noValueFieldTypes = [
