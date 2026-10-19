@@ -84,6 +84,14 @@
   .dialog-scroll-container {
     overflow-y: scroll;
   }
+  /* the dialog itself scrolls too (own scroll area = what iOS needs for long forms
+     like Create Lead, with the Create button always reachable) */
+  .dialog-content {
+    max-height: calc(100dvh - 4rem);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
   .dialog-scroll-container::after {
     content: '';
     display: block;
