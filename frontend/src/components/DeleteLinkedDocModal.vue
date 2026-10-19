@@ -285,7 +285,11 @@ const deleteDoc = async () => {
     })
   } catch (err) {
     unmarkDocumentAsDeleted(props.doctype, props.docname)
-    throw err
+    // Royal: always tell the person why the delete failed
+    toast.error(
+      err?.messages?.[0] || err?.message || __('Could not delete. Please try again.'),
+    )
+    return
   }
   expireDeletionMarker(props.doctype, props.docname)
   const label = props.title

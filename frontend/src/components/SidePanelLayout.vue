@@ -377,6 +377,13 @@
                         />
                       </div>
                       <div class="ml-1">
+                        <!-- Royal: one tap to copy a phone number -->
+                        <span
+                          v-if="field.options === 'Phone' && doc[field.fieldname]"
+                          class="lucide-copy relative -left-[13px] block size-4 shrink-0 cursor-pointer text-ink-gray-5 hover:text-ink-gray-8"
+                          :title="__('Copy number')"
+                          @click.stop="copyPhone(doc[field.fieldname])"
+                        />
                         <ArrowUpRightIcon
                           v-if="
                             field.fieldtype === 'Link' &&
@@ -437,6 +444,7 @@ import EditIcon from '@/components/Icons/EditIcon.vue'
 import Link from '@/components/Controls/Link.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import SidePanelModal from '@/components/Modals/SidePanelModal.vue'
+import { toast } from 'frappe-ui'
 import { getMeta } from '@/stores/meta'
 import { parseLinkFilters } from '@/utils/fieldTransforms'
 import { usersStore } from '@/stores/users'
@@ -464,6 +472,24 @@ import {
 } from 'frappe-ui'
 import { useDocument } from '@/data/document'
 import { ref, computed, getCurrentInstance } from 'vue'
+
+async function copyPhone(text) {
+  const value = String(text ?? '').trim()
+  if (!value) return
+  try {
+    await navigator.clipboard.writeText(value)
+  } catch {
+    const el = window.document.createElement('textarea')
+    el.value = value
+    el.style.position = 'fixed'
+    el.style.opacity = '0'
+    window.document.body.appendChild(el)
+    el.select()
+    window.document.execCommand('copy')
+    window.document.body.removeChild(el)
+  }
+  toast.success(__('Copied'))
+}
 
 const props = defineProps({
   sections: { type: Object, default: () => ({}) },
