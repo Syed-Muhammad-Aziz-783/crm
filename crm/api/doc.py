@@ -343,6 +343,10 @@ def get_data(
 				rows.append(column.get("key"))
 			column["label"] = _(column.get("label"))
 
+			# Royal: heading and data are centered together in every list
+			if column.get("key") != "_liked_by":
+				column["align"] = "center"
+
 			if column.get("key") == "_liked_by" and column.get("width") == "10rem":
 				column["width"] = "50px"
 
