@@ -279,6 +279,7 @@
 </template>
 
 <script setup>
+import { sanitizeColumnWidths } from '@/composables/sanitizeColumns'
 import ViewBreadcrumbs from '@/components/ViewBreadcrumbs.vue'
 import MultipleAvatar from '@/components/MultipleAvatar.vue'
 import CustomActions from '@/components/CustomActions.vue'
@@ -378,7 +379,7 @@ const columns = computed(() => {
     })
   }
 
-  return _columns
+  return sanitizeColumnWidths(_columns)
 })
 
 function getGroupedByRows(listRows, groupByField, columns) {

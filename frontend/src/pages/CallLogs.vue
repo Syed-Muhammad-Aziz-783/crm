@@ -69,6 +69,7 @@
 </template>
 
 <script setup>
+import { sanitizeColumnWidths } from '@/composables/sanitizeColumns'
 import ViewBreadcrumbs from '@/components/ViewBreadcrumbs.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
@@ -120,7 +121,7 @@ const columns = computed(() => {
     })
   }
 
-  return _columns
+  return sanitizeColumnWidths(_columns)
 })
 
 const showCallLogDetailModal = ref(false)

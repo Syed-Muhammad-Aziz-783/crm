@@ -206,6 +206,7 @@
 </template>
 
 <script setup>
+import { sanitizeColumnWidths } from '@/composables/sanitizeColumns'
 import ViewBreadcrumbs from '@/components/ViewBreadcrumbs.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
@@ -283,7 +284,7 @@ const columns = computed(() => {
     })
   }
 
-  return _columns
+  return sanitizeColumnWidths(_columns)
 })
 
 function getKanbanRows(data, columns) {
