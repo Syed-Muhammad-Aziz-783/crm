@@ -15,3 +15,6 @@ Rules:
 1. Never press "Sync fork" on frappe, erpnext or hrms. That pulls frappe.io code in unreviewed.
 2. To take a frappe.io update on purpose: merge it into the fork's version-16 branch on a test branch, review, build, back up, then merge and run migrate.
 3. Frappe, ERPNext and HRMS fixes of our own go into the forks too.
+4. GUARD: the build workflow checks that the three forks are still on the frozen commits above. If one moved (mistaken Sync fork), the build STOPS before building and the server keeps its old image. To take new code on purpose, change the SHAs in the guard step in the same change.
+5. If Sync fork was pressed by mistake: do not push anything, tell Claude. Claude resets the fork's version-16 to the frozen commit.
+6. This notes file also lives on branch `royal-notes` in the frappe, erpnext and hrms forks (a separate branch, so version-16 stays untouched and frozen).

@@ -20,6 +20,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
+      # Royal GUARD: stop the build if any fork moved away from the frozen commit
+      # (for example after a mistaken "Sync fork"). To take new code on purpose,
+      # update the SHA below in the same change. See ROYAL_BUILD_NOTES.md.
+      - name: Guard - forks must be on the frozen commits
+        run: |
+          set -e
+          check() {
+            got=$(git ls-remote "https://github.com/Syed-Muhammad-Aziz-783/$1" refs/heads/version-16 | cut -f1)
+            if [ "$got" != "$2" ]; then
+              echo "::error::Fork $1 version-16 is at '$got' but frozen at $2. Build stopped on purpose (Sync fork by mistake?). Tell Claude."
+              exit 1
+            fi
+            echo "$1 OK $got"
+          }
+          check frappe 4515014c87ece6cb20ee91d2cfb121c5cbd1ff4a
+          check erpnext 5af6561f5aa48104559692fb4fd82f2580e8d338
+          check hrms 2478afc7a8f4959d500f6d17522853f0d244e38f
+
       - name: Free disk space on runner
         run: |
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost
