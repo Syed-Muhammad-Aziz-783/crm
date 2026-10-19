@@ -59,6 +59,7 @@
             :data="deal.doc"
             doctype="CRM Deal"
           />
+          <TagsBox doctype="CRM Deal" v-model="newTags" bare class="mt-3" />
           <ErrorMessage v-if="error" class="mt-4" :message="__(error)" />
         </div>
       </div>
@@ -78,6 +79,8 @@
 
 <script setup>
 import EditIcon from '@/components/Icons/EditIcon.vue'
+import TagsBox from '@/components/TagsBox.vue'
+import { saveTagsToDoc } from '@/utils/tagColors'
 import FieldLayout from '@/components/FieldLayout/FieldLayout.vue'
 import { usersStore } from '@/stores/users'
 import { statusesStore } from '@/stores/statuses'
@@ -172,6 +175,8 @@ watch(
 
 const dealStatuses = computed(() => statusOptions('deal'))
 
+const newTags = ref([])
+
 async function createDeal() {
   if (deal.doc.website && !deal.doc.website.startsWith('http')) {
     deal.doc.website = 'https://' + deal.doc.website
@@ -216,7 +221,8 @@ async function createDeal() {
       }
       isDealCreating.value = true
     },
-    onSuccess(name) {
+    async onSuccess(name) {
+      await saveTagsToDoc('CRM Deal', name, newTags.value)
       capture('deal_created')
       isDealCreating.value = false
       show.value = false

@@ -75,6 +75,7 @@
     >
       <template #tab-panel="{ tab }">
         <div v-if="tab.name == 'Details'">
+          <TagsBox doctype="CRM Lead" :docname="leadId" />
           <SLASection
             v-if="doc.sla_status"
             v-model="doc"
@@ -152,6 +153,7 @@ import Activities from '@/components/Activities/Activities.vue'
 import AssignTo from '@/components/AssignTo.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import SLASection from '@/components/SLASection.vue'
+import TagsBox from '@/components/TagsBox.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import { setupCustomizations, isTranslatable } from '@/utils'
 import { getView } from '@/utils/view'

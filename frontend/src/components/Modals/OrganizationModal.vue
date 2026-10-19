@@ -35,6 +35,7 @@
           :data="organization.doc"
           doctype="CRM Organization"
         />
+        <TagsBox doctype="CRM Organization" v-model="newTags" bare class="mt-3" />
         <ErrorMessage v-if="error" class="mt-8" :message="__(error)" />
       </div>
       <div class="px-4 pt-4 pb-7 sm:px-6">
@@ -61,6 +62,8 @@ import { showQuickEntryModal, quickEntryProps } from '@/composables/modals'
 import { useDocument } from '@/data/document'
 import { useDoctypeModal } from '@/composables/doctypeModal'
 import { useTelemetry } from '@framework/ui/telemetry'
+import TagsBox from '@/components/TagsBox.vue'
+import { saveTagsToDoc } from '@/utils/tagColors'
 import { Dialog, call, createResource } from 'frappe-ui'
 import { ref, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -85,6 +88,8 @@ const error = ref(null)
 const { document: organization, triggerOnBeforeCreate } =
   useDocument('CRM Organization')
 
+const newTags = ref([])
+
 async function createOrganization() {
   loading.value = true
   error.value = null
@@ -108,6 +113,7 @@ async function createOrganization() {
   )
   loading.value = false
   if (doc.name) {
+    await saveTagsToDoc('CRM Organization', doc.name, newTags.value)
     capture('organization_created')
     handleOrganizationUpdate(doc)
     organization.doc = {}

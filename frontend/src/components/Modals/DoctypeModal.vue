@@ -55,6 +55,14 @@
             :doctype="doctype"
             :docname="docname"
           />
+          <TagsBox
+            v-if="doctype === 'CRM Task'"
+            doctype="CRM Task"
+            :docname="editMode ? docname : ''"
+            v-model="newTags"
+            bare
+            class="mt-3"
+          />
           <ErrorMessage v-if="error" class="mt-4" :message="__(error)" />
         </div>
       </div>
@@ -98,6 +106,8 @@ import { isMobileView } from '@/composables/settings'
 import { setupCustomizations } from '@/utils'
 import { useDoctypeModal } from '@/composables/doctypeModal'
 
+import TagsBox from '@/components/TagsBox.vue'
+import { saveTagsToDoc } from '@/utils/tagColors'
 import { Dialog, call, createResource, toast } from 'frappe-ui'
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -134,9 +144,12 @@ const layout = createResource({
 const error = ref(null)
 const editMode = computed(() => Boolean(document.doc?.name))
 
+const newTags = ref([])
+
 const _create = createResource({
   url: 'frappe.client.insert',
-  onSuccess: (d) => {
+  onSuccess: async (d) => {
+    if (props.doctype === 'CRM Task') await saveTagsToDoc('CRM Task', d.name, newTags.value)
     document.doc = {}
     emit('afterInsert', d)
     show.value = false

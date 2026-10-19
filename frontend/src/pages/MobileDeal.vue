@@ -61,6 +61,7 @@
     >
       <template #tab-panel="{ tab }">
         <div v-if="tab.name == 'Details'">
+          <TagsBox doctype="CRM Deal" :docname="dealId" />
           <SLASection
             v-if="doc.sla_status"
             v-model="doc"
@@ -293,6 +294,7 @@ import Section from '@/components/CollapsibleSection.vue'
 import Link from '@/components/Controls/Link.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import SLASection from '@/components/SLASection.vue'
+import TagsBox from '@/components/TagsBox.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import { setupCustomizations, isTranslatable } from '@/utils'
 import { getView } from '@/utils/view'

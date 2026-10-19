@@ -90,6 +90,7 @@
               <div>{{ item.timeAgo }}</div>
             </Tooltip>
           </div>
+          <TagChips v-else-if="column.key === '_user_tags'" :value="item" />
           <div v-else-if="column.type === 'Check'">
             <FormControl
               type="checkbox"
@@ -179,6 +180,7 @@
   />
 </template>
 <script setup>
+import TagChips from '@/components/TagChips.vue'
 import HeartIcon from '@/components/Icons/HeartIcon.vue'
 import CopyPhone from '@/components/CopyPhone.vue'
 import RatingInput from '@/components/Controls/RatingInput.vue'

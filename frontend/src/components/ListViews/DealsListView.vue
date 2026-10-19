@@ -147,17 +147,7 @@
               "
             />
           </div>
-          <div
-            v-else-if="column.key === '_user_tags'"
-            class="flex flex-wrap items-center justify-center gap-1"
-          >
-            <span
-              v-for="t in String(item?.label ?? item ?? '').split(',').map((x) => x.trim()).filter(Boolean)"
-              :key="t"
-              class="rounded-full bg-surface-gray-3 px-2 py-0.5 text-sm text-ink-gray-8"
-              >{{ t }}</span
-            >
-          </div>
+          <TagChips v-else-if="column.key === '_user_tags'" :value="item" />
           <div v-else-if="column.type === 'Check'">
             <FormControl
               type="checkbox"
@@ -252,6 +242,7 @@
 </template>
 
 <script setup>
+import TagChips from '@/components/TagChips.vue'
 import HeartIcon from '@/components/Icons/HeartIcon.vue'
 import MultipleAvatar from '@/components/MultipleAvatar.vue'
 import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'

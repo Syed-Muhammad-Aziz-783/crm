@@ -104,6 +104,7 @@
             class="truncate text-base h-4 [&>p]:truncate"
             v-html="sanitizeHTML(item)"
           />
+          <TagChips v-else-if="column.key === '_user_tags'" :value="item" />
           <div v-else-if="column.type === 'Check'">
             <FormControl
               type="checkbox"
@@ -192,6 +193,7 @@
   />
 </template>
 <script setup>
+import TagChips from '@/components/TagChips.vue'
 import CopyPhone from '@/components/CopyPhone.vue'
 import HeartIcon from '@/components/Icons/HeartIcon.vue'
 import TaskStatusIcon from '@/components/Icons/TaskStatusIcon.vue'

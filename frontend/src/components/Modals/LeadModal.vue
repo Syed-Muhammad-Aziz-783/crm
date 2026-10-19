@@ -31,6 +31,7 @@
         </div>
         <div>
           <FieldLayout v-if="tabs.data" :tabs="tabs.data" :data="lead.doc" />
+          <TagsBox doctype="CRM Lead" v-model="newTags" bare class="mt-3" />
           <ErrorMessage v-if="error" class="mt-4" :message="__(error)" />
         </div>
       </div>
@@ -49,6 +50,8 @@
 </template>
 
 <script setup>
+import TagsBox from '@/components/TagsBox.vue'
+import { saveTagsToDoc } from '@/utils/tagColors'
 import EditIcon from '@/components/Icons/EditIcon.vue'
 import FieldLayout from '@/components/FieldLayout/FieldLayout.vue'
 import { usersStore } from '@/stores/users'
@@ -109,6 +112,8 @@ const tabs = createResource({
   },
 })
 
+const newTags = ref([])
+
 const createLead = createResource({
   url: 'frappe.client.insert',
 })
@@ -159,7 +164,8 @@ async function createNewLead() {
         }
         isLeadCreating.value = true
       },
-      onSuccess(data) {
+      async onSuccess(data) {
+        await saveTagsToDoc('CRM Lead', data.name, newTags.value)
         capture('lead_created')
         isLeadCreating.value = false
         show.value = false

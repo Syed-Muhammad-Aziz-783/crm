@@ -112,6 +112,7 @@
           </template>
         </FileUploader>
       </div>
+      <TagsBox v-if="contact.doc?.name" doctype="Contact" :docname="contact.doc.name" />
       <div
         v-if="sections.data"
         class="flex flex-1 flex-col justify-between overflow-hidden"
@@ -183,6 +184,7 @@ import ErrorPage from '@/components/ErrorPage.vue'
 import Resizer from '@/components/Resizer.vue'
 import Icon from '@/components/Icon.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
+import TagsBox from '@/components/TagsBox.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import CameraIcon from '@/components/Icons/CameraIcon.vue'

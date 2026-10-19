@@ -35,6 +35,7 @@
           :data="_contact.doc"
           doctype="Contact"
         />
+        <TagsBox doctype="Contact" v-model="newTags" bare class="mt-3" />
         <ErrorMessage v-if="error" class="mt-6" :message="__(error)" />
       </div>
       <div class="px-4 pb-7 pt-4 sm:px-6">
@@ -62,6 +63,8 @@ import { useDocument } from '@/data/document'
 import { evaluateDependsOnValue } from '@/utils'
 import { useDoctypeModal } from '@/composables/doctypeModal'
 import { useTelemetry } from '@framework/ui/telemetry'
+import TagsBox from '@/components/TagsBox.vue'
+import { saveTagsToDoc } from '@/utils/tagColors'
 import { Dialog, createResource } from 'frappe-ui'
 import { ref, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -124,9 +127,12 @@ function validateRequiredFields() {
   return null
 }
 
+const newTags = ref([])
+
 const insertContact = createResource({
   url: 'frappe.client.insert',
-  onSuccess: (doc) => {
+  onSuccess: async (doc) => {
+    await saveTagsToDoc('Contact', doc.name, newTags.value)
     capture('contact_created')
     handleContactUpdate(doc)
     _contact.doc = {}

@@ -140,6 +140,7 @@
           </template>
         </FileUploader>
       </div>
+      <TagsBox v-if="organization.doc?.name" doctype="CRM Organization" :docname="organization.doc.name" />
       <div
         v-if="sections.data"
         class="flex flex-1 flex-col justify-between overflow-hidden"
@@ -227,6 +228,7 @@
 import ErrorPage from '@/components/ErrorPage.vue'
 import Resizer from '@/components/Resizer.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
+import TagsBox from '@/components/TagsBox.vue'
 import Icon from '@/components/Icon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
