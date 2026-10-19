@@ -358,10 +358,12 @@ def get_data(
 		if meta.track_seen and "_seen" not in rows:
 			rows.append("_seen")
 
+		# Royal: Notes / Open Tasks columns are counted, not stored in the table
+		db_rows = [r for r in rows if r not in ROYAL_COUNT_COLUMNS]
 		data = (
 			frappe.get_list(
 				doctype,
-				fields=rows,
+				fields=db_rows,
 				filters=filters,
 				order_by=order_by,
 				page_length=page_length,
@@ -369,6 +371,7 @@ def get_data(
 			or []
 		)
 		data = parse_list_data(data, doctype)
+		royal_add_counts(data, doctype, rows)
 
 	if view_type == "kanban":
 		if not rows:
@@ -475,7 +478,18 @@ def get_data(
 		{"label": "Like", "fieldtype": "Data", "fieldname": "_liked_by"},
 	]
 
+	if doctype in ("CRM Lead", "CRM Deal"):
+		std_fields += [
+			{"label": "Open Tasks", "fieldtype": "Data", "fieldname": "_task_count"},
+			{"label": "Notes", "fieldtype": "Data", "fieldname": "_note_count"},
+		]
+
 	for field in std_fields:
+		if field.get("fieldname") in ROYAL_COUNT_COLUMNS:
+			if field not in fields:
+				field["label"] = _(field["label"])
+				fields.append(field)
+			continue
 		if field.get("fieldname") not in rows:
 			rows.append(field.get("fieldname"))
 		if field not in fields:
@@ -646,6 +660,44 @@ def get_fields(doctype: str, allow_all_fieldtypes: bool = False):
 			_fields.append(field)
 
 	return _fields
+
+
+ROYAL_COUNT_COLUMNS = ("_task_count", "_note_count")
+
+
+def royal_add_counts(data, doctype, rows):
+	"""Fill _task_count (open tasks) and _note_count when a list asks for them."""
+	if not data or not any(r in rows for r in ROYAL_COUNT_COLUMNS):
+		return
+	names = [d.get("name") for d in data]
+	if "_task_count" in rows:
+		counts = {
+			r.reference_docname: r.c
+			for r in frappe.get_all(
+				"CRM Task",
+				filters={
+					"reference_doctype": doctype,
+					"reference_docname": ["in", names],
+					"status": ["not in", ["Done", "Canceled"]],
+				},
+				fields=["reference_docname", "count(name) as c"],
+				group_by="reference_docname",
+			)
+		}
+		for d in data:
+			d["_task_count"] = str(counts.get(d.get("name"), 0))
+	if "_note_count" in rows:
+		counts = {
+			r.reference_docname: r.c
+			for r in frappe.get_all(
+				"FCRM Note",
+				filters={"reference_doctype": doctype, "reference_docname": ["in", names]},
+				fields=["reference_docname", "count(name) as c"],
+				group_by="reference_docname",
+			)
+		}
+		for d in data:
+			d["_note_count"] = str(counts.get(d.get("name"), 0))
 
 
 def getCounts(d, doctype):
