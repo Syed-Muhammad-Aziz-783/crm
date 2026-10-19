@@ -31,8 +31,9 @@
         </div>
       </div>
       <div class="px-4 pb-7 pt-0 sm:px-6">
-        <div class="flex flex-col-reverse gap-2 sm:flex-row-reverse [&>button]:w-full sm:[&>button]:w-auto">
+        <div class="flex flex-col-reverse gap-2 sm:flex-row-reverse">
           <Button
+            class="w-full sm:w-auto"
             :label="__('Delete {0} items', [props.items.length])"
             icon-left="lucide-trash-2"
             variant="solid"
@@ -40,6 +41,7 @@
             @click="confirmDelete()"
           />
           <Button
+            class="w-full sm:w-auto"
             :label="__('Unlink & Delete {0} items', [props.items.length])"
             icon-left="lucide-unlock"
             variant="solid"

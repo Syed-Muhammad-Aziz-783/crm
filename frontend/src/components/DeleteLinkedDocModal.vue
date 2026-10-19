@@ -69,8 +69,9 @@
         </div>
       </div>
       <div v-if="!confirmDeleteInfo.show" class="px-4 pb-7 pt-0 sm:px-6">
-        <div class="flex flex-col-reverse gap-2 sm:flex-row-reverse [&>button]:w-full sm:[&>button]:w-auto">
+        <div class="flex flex-col-reverse gap-2 sm:flex-row-reverse">
           <Button
+            class="w-full sm:w-auto"
             v-if="linkedDocs?.length > 0"
             :label="
               viewControls?.selections?.length == 0
@@ -83,6 +84,7 @@
             @click="confirmDelete()"
           />
           <Button
+            class="w-full sm:w-auto"
             v-if="linkedDocs?.length > 0"
             :label="
               viewControls?.selections?.length == 0
@@ -95,6 +97,7 @@
             @click="confirmUnlink()"
           />
           <Button
+            class="w-full sm:w-auto"
             v-if="linkedDocs?.length == 0"
             variant="solid"
             icon-left="lucide-trash-2"
