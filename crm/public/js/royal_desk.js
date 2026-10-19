@@ -106,4 +106,44 @@
 			}, 15000);
 		}
 	});
+
+	// Royal: live sync in the desk (ERPNext, HRMS and every other app).
+	// The open list or form quietly refreshes when something changes, when you come
+	// back to the tab, and never while you are typing or have unsaved edits.
+	function quiet_refresh() {
+		try {
+			if (document.visibilityState !== "visible") return;
+			var a = document.activeElement;
+			if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return;
+			if (window.cur_frm && cur_frm.doc && !cur_frm.is_new() && !cur_frm.is_dirty()) {
+				cur_frm.reload_doc();
+			} else if (window.cur_list && cur_list.refresh && !window.cur_frm) {
+				cur_list.refresh();
+			}
+		} catch (e) {}
+	}
+	var debounced_refresh = frappe.utils.debounce(quiet_refresh, 800);
+
+	function start_live_sync() {
+		if (!frappe.realtime || !frappe.realtime.on) return false;
+		frappe.realtime.on("list_update", function (d) {
+			if (window.cur_list && d && cur_list.doctype === d.doctype) debounced_refresh();
+		});
+		frappe.realtime.on("doc_update", function (d) {
+			if (
+				window.cur_frm &&
+				d &&
+				cur_frm.doctype === d.doctype &&
+				cur_frm.docname === d.name &&
+				d.modified !== cur_frm.doc.modified
+			) {
+				debounced_refresh();
+			}
+		});
+		document.addEventListener("visibilitychange", debounced_refresh);
+		return true;
+	}
+	$(function () {
+		if (!start_live_sync()) setTimeout(start_live_sync, 3000);
+	});
 })();

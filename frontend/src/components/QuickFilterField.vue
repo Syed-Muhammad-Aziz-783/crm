@@ -6,23 +6,6 @@
     type="checkbox"
     @change.stop="updateFilter(filter, $event.target.checked)"
   />
-  <!-- Royal: on phones use the phone's own picker. The custom dropdown did not
-       refresh the list on iPhone until the page was reloaded. -->
-  <select
-    v-else-if="filter.fieldtype === 'Select' && isMobileView"
-    :value="filter.value || ''"
-    class="h-7 w-full rounded border-none bg-surface-gray-2 px-2 text-base text-ink-gray-8 focus:outline-none"
-    @change="updateFilter(filter, $event.target.value)"
-  >
-    <option value="">{{ filter.label }}</option>
-    <option
-      v-for="opt in nativeOptions"
-      :key="opt.value"
-      :value="opt.value"
-    >
-      {{ opt.label }}
-    </option>
-  </select>
   <FormControl
     v-else-if="filter.fieldtype === 'Select'"
     v-model="filter.value"
@@ -66,20 +49,13 @@ import Link from '@/components/Controls/Link.vue'
 import { FormControl, DatePicker, DateTimePicker } from 'frappe-ui'
 import { getFormat } from '@/utils'
 import { useDebounceFn } from '@vueuse/core'
-import { computed, reactive, watch } from 'vue'
-import { isMobileView } from '@/composables/settings'
+import { reactive, watch } from 'vue'
 
 const props = defineProps({
   filter: { type: Object, required: true },
 })
 
 const filter = reactive(props.filter)
-
-const nativeOptions = computed(() =>
-  (props.filter.options || [])
-    .map((o) => (typeof o === 'string' ? { label: o, value: o } : o))
-    .filter((o) => o.value),
-)
 
 const emit = defineEmits(['applyQuickFilter'])
 

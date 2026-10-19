@@ -15,8 +15,11 @@ import NotPermitted from '@/pages/NotPermitted.vue'
 import DoctypeModals from '@/components/Modals/DoctypeModals.vue'
 import { Dialogs } from '@/utils/dialogs'
 import { sessionStore } from '@/stores/session'
+import { useAutoUpdate } from '@/composables/useAutoUpdate'
 import { FrappeUIProvider, setConfig, useColorScheme } from 'frappe-ui'
 import { computed, defineAsyncComponent, provide } from 'vue'
+
+useAutoUpdate()
 
 const session = sessionStore()
 provide('session', session)
