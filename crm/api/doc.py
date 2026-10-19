@@ -740,8 +740,18 @@ def royal_add_counts(data, doctype, rows):
 	try:
 		if "_task_count" in rows:
 			counts = grouped("CRM Task", "and status not in ('Done', 'Canceled')")
+			# due date of the LAST CREATED open task of each record (oldest first, last one wins)
+			last_due = {}
+			for ref, due in frappe.db.sql(
+				"select reference_docname, due_date from `tabCRM Task` "
+				"where reference_doctype=%s and reference_docname in %s "
+				"and status not in ('Done', 'Canceled') order by creation asc",
+				(doctype, names),
+			):
+				last_due[str(ref)] = str(due) if due else ""
 			for d in data:
 				d["_task_count"] = str(counts.get(str(d.get("name")), 0))
+				d["_task_due"] = last_due.get(str(d.get("name")), "")
 		if "_note_count" in rows:
 			counts = grouped("FCRM Note")
 			for d in data:
@@ -750,6 +760,7 @@ def royal_add_counts(data, doctype, rows):
 		frappe.log_error(title="Royal counts failed")
 		for d in data:
 			d.setdefault("_task_count", "-")
+			d.setdefault("_task_due", "")
 			d.setdefault("_note_count", "-")
 
 

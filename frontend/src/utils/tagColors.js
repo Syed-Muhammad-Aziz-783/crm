@@ -70,6 +70,33 @@ export function parseTags(value) {
     .filter(Boolean)
 }
 
+// Royal: width (px) a Tags list column needs so the widest row shows every tag on
+// one line. Chip = text-sm (13px) + px-2, chips are 4px apart. Measured with a
+// canvas; 6% extra because the real font may load after we measure.
+let measureCtx = null
+function textWidth(text) {
+  try {
+    measureCtx = measureCtx || document.createElement('canvas').getContext('2d')
+    measureCtx.font =
+      '13px InterVar, Inter, ui-sans-serif, system-ui, sans-serif'
+    return measureCtx.measureText(text).width + text.length * 0.26
+  } catch (e) {
+    return text.length * 7.8
+  }
+}
+
+export function tagsColumnWidth(rows) {
+  let widest = 0
+  for (const row of rows || []) {
+    const tags = parseTags(row?._user_tags)
+    if (!tags.length) continue
+    let w = (tags.length - 1) * 4
+    for (const t of tags) w += textWidth(t) + 18
+    widest = Math.max(widest, w)
+  }
+  return widest ? Math.ceil(widest * 1.06) + 8 : 0
+}
+
 // used right after a record is created
 export async function saveTagsToDoc(doctype, name, tags) {
   if (!tags?.length) return

@@ -173,6 +173,11 @@
             />
           </div>
           <TagChips v-else-if="column.key === '_user_tags'" :value="item" />
+          <OpenTasksCell
+            v-else-if="column.key === '_task_count'"
+            :count="item"
+            :due="row._task_due"
+          />
           <div v-else-if="column.type === 'Check'">
             <FormControl
               type="checkbox"
@@ -247,6 +252,7 @@
 
 <script setup>
 import TagChips from '@/components/TagChips.vue'
+import OpenTasksCell from '@/components/OpenTasksCell.vue'
 import HeartIcon from '@/components/Icons/HeartIcon.vue'
 import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
 import CopyPhone from '@/components/CopyPhone.vue'

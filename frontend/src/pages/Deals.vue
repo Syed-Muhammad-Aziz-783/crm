@@ -353,7 +353,7 @@ const columns = computed(() => {
     })
   }
 
-  return sanitizeColumnWidths(_columns)
+  return sanitizeColumnWidths(_columns, deals.value?.data?.data)
 })
 
 function getGroupedByRows(listRows, groupByField, columns) {
@@ -498,6 +498,7 @@ function parseRows(rows, columns = []) {
     _rows['_email_count'] = deal._email_count
     _rows['_note_count'] = deal._note_count
     _rows['_task_count'] = deal._task_count
+    _rows['_task_due'] = deal._task_due
     _rows['_comment_count'] = deal._comment_count
     return _rows
   })

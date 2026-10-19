@@ -284,7 +284,7 @@ const columns = computed(() => {
     })
   }
 
-  return sanitizeColumnWidths(_columns)
+  return sanitizeColumnWidths(_columns, tasks.value?.data?.data)
 })
 
 function getKanbanRows(data, columns) {

@@ -161,6 +161,6 @@ const columns = computed(() => {
     })
   }
 
-  return sanitizeColumnWidths(_columns)
+  return sanitizeColumnWidths(_columns, organizations.value?.data?.data)
 })
 </script>

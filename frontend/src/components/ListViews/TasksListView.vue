@@ -194,6 +194,7 @@
 </template>
 <script setup>
 import TagChips from '@/components/TagChips.vue'
+import { dueStyle } from '@/utils/dueColor'
 import CopyPhone from '@/components/CopyPhone.vue'
 import HeartIcon from '@/components/Icons/HeartIcon.vue'
 import TaskStatusIcon from '@/components/Icons/TaskStatusIcon.vue'
@@ -248,19 +249,6 @@ const emit = defineEmits([
 
 const pageLengthCount = defineModel({ type: Number })
 const list = defineModel('list', { type: Object })
-
-// Royal: Odoo-style colors. Red = overdue, yellow = today, green = future.
-// Done tasks are not colored.
-function dueStyle(item, status) {
-  if (!item || status === 'Done') return {}
-  const t = new Date()
-  const pad = (n) => String(n).padStart(2, '0')
-  const today = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`
-  const day = String(item).slice(0, 10)
-  if (day < today) return { backgroundColor: '#dc2626', color: '#ffffff' }
-  if (day === today) return { backgroundColor: '#facc15', color: '#1f2937' }
-  return { backgroundColor: '#16a34a', color: '#ffffff' }
-}
 
 function onColumnWidthUpdated({ width, save }, column) {
   column.width = width
