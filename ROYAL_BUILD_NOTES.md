@@ -1,0 +1,17 @@
+# Royal build notes
+
+The full image (`.github/workflows/build-image.yml`) is built ONLY from our own forks:
+
+| App | Our fork | Branch | Frozen at (2026-10-19) |
+| --- | --- | --- | --- |
+| frappe | Syed-Muhammad-Aziz-783/frappe | version-16 | 4515014c87ece6cb20ee91d2cfb121c5cbd1ff4a (2026-10-14) |
+| erpnext | Syed-Muhammad-Aziz-783/erpnext | version-16 | 5af6561f5aa48104559692fb4fd82f2580e8d338 (2026-10-15) |
+| hrms | Syed-Muhammad-Aziz-783/hrms | version-16 | 2478afc7a8f4959d500f6d17522853f0d244e38f (2026-10-15) |
+| crm | Syed-Muhammad-Aziz-783/crm | royal | (our work) |
+
+These commits are exactly what the server image contained at the last full build before the switch.
+
+Rules:
+1. Never press "Sync fork" on frappe, erpnext or hrms. That pulls frappe.io code in unreviewed.
+2. To take a frappe.io update on purpose: merge it into the fork's version-16 branch on a test branch, review, build, back up, then merge and run migrate.
+3. Frappe, ERPNext and HRMS fixes of our own go into the forks too.

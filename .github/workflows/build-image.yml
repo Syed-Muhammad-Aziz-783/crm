@@ -28,12 +28,14 @@ jobs:
       - name: Get frappe_docker (official build files)
         run: git clone --depth 1 https://github.com/frappe/frappe_docker.git .
 
+      # Royal: frappe, erpnext and hrms come from OUR forks (frozen on version-16 at the
+      # commits listed in ROYAL_BUILD_NOTES.md). Nothing from frappe.io enters unless we merge it.
       - name: Write apps.json
         run: |
           cat > apps.json <<'JSON'
           [
-            {"url": "https://github.com/frappe/erpnext", "branch": "version-16"},
-            {"url": "https://github.com/frappe/hrms", "branch": "version-16"},
+            {"url": "https://github.com/Syed-Muhammad-Aziz-783/erpnext", "branch": "version-16"},
+            {"url": "https://github.com/Syed-Muhammad-Aziz-783/hrms", "branch": "version-16"},
             {"url": "https://github.com/Syed-Muhammad-Aziz-783/crm", "branch": "royal"}
           ]
           JSON
@@ -56,6 +58,7 @@ jobs:
             apps_json=apps.json
           build-args: |
             FRAPPE_BRANCH=version-16
+            FRAPPE_PATH=https://github.com/Syed-Muhammad-Aziz-783/frappe
             CACHE_BUST=${{ github.sha }}
           tags: |
             ${{ env.IMAGE }}:v16
