@@ -110,31 +110,36 @@ class CRMTask(Document):
 
 	@staticmethod
 	def default_list_data():
-		# Royal: Due Date, Lead Name, Phone, Description, Status, Assigned To
+		# Royal: the team standard Tasks screen (every new user starts with it)
 		columns = [
-			{"label": "Due Date", "type": "Date", "key": "due_date", "width": "8rem"},
-			{"label": "Lead Name", "type": "Data", "key": "lead_name", "width": "14rem"},
+			{"label": "Due Date", "type": "Date", "key": "due_date", "width": "10rem"},
+			{"label": "Lead Name", "type": "Data", "key": "lead_name", "width": "6rem"},
 			{"label": "Phone", "type": "Data", "key": "lead_phone", "width": "10rem"},
-			{"label": "Location", "type": "Data", "key": "lead_location", "width": "12rem"},
-			{"label": "Description", "type": "Text Editor", "key": "description", "width": "16rem"},
-			{"label": "Status", "type": "Select", "key": "status", "width": "8rem"},
-			{"label": "Assigned To", "type": "Link", "key": "assigned_to", "width": "10rem"},
+			{"label": "Description", "type": "Text Editor", "key": "description", "width": "6rem"},
+			{"label": "Assigned To", "type": "Link", "key": "assigned_to", "width": "6rem"},
+			{"label": "Status", "type": "Select", "key": "status", "width": "6rem"},
+			{"label": "Tags", "type": "Data", "key": "_user_tags", "width": "10rem"},
 		]
-
 		rows = [
 			"name",
-			"lead_name",
-			"lead_phone",
-			"lead_location",
-			"title",
 			"description",
 			"assigned_to",
 			"due_date",
 			"status",
-			"priority",
 			"reference_doctype",
 			"reference_docname",
+			"owner",
+			"creation",
+			"modified_by",
+			"_assign",
+			"_liked_by",
+			"lead_name",
+			"lead_phone",
+			"title",
+			"priority",
 			"modified",
+			"_user_tags",
+			"lead_location",
 		]
 		return {"columns": columns, "rows": rows}
 

@@ -23,7 +23,7 @@
               {{ __('Theme') }}
             </span>
             <span class="text-p-sm text-ink-gray-6">
-              {{ __('Switch between light, dark, or system theme') }}
+              {{ __('Choose light or dark. The app keeps your choice and does not follow the phone setting') }}
             </span>
           </div>
           <ThemeSwitcher

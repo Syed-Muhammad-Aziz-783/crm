@@ -24,8 +24,11 @@ useAutoUpdate()
 const session = sessionStore()
 provide('session', session)
 
-const { setColorScheme } = useColorScheme()
-if (!localStorage.getItem('theme')) {
+// Royal: the app shows what the user chose (light or dark) and never follows the
+// phone / computer setting. frappe-ui starts in "system" when nothing is saved, which
+// turned the app dark on iPhones at night, so "system" is changed to light here.
+const { colorScheme, setColorScheme } = useColorScheme()
+if (colorScheme.value === 'system') {
   setColorScheme('light')
 }
 

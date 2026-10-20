@@ -504,20 +504,11 @@ class CRMLead(Document):
 
 	@staticmethod
 	def default_list_data():
+		# Royal: the team standard Leads screen. Every user without a saved layout of their own
+		# (every new user) starts with this one.
 		columns = [
-			{
-				"label": "Full Name",
-				"type": "Data",
-				"key": "lead_name",
-				"width": "12rem",
-			},
-			{
-				"label": "Organization",
-				"type": "Link",
-				"key": "organization",
-				"options": "CRM Organization",
-				"width": "10rem",
-			},
+			{"label": "Open Tasks", "type": "Data", "key": "_task_count", "width": "5rem"},
+			{"label": "Full Name", "type": "Data", "key": "lead_name", "width": "12rem"},
 			{
 				"label": "Status",
 				"type": "Link",
@@ -525,37 +516,15 @@ class CRMLead(Document):
 				"key": "status",
 				"width": "8rem",
 			},
-			{
-				"label": "Email",
-				"type": "Data",
-				"key": "email",
-				"width": "12rem",
-			},
-			{
-				"label": "Phone",
-				"type": "Data",
-				"key": "phone",
-				"width": "11rem",
-			},
-			{
-				"label": "Assigned To",
-				"type": "Text",
-				"key": "_assign",
-				"width": "10rem",
-			},
-			{
-				"label": "Last Modified",
-				"type": "Datetime",
-				"key": "modified",
-				"width": "8rem",
-			},
+			{"label": "Phone", "type": "Data", "key": "phone", "width": "11rem"},
+			{"label": "Assigned To", "type": "Text", "key": "_assign", "width": "10rem"},
+			{"label": "Notes", "type": "Data", "key": "_note_count", "width": "5rem"},
+			{"label": "Tags", "type": "Data", "key": "_user_tags", "width": "10rem"},
 		]
 		rows = [
 			"name",
 			"lead_name",
-			"organization",
 			"status",
-			"email",
 			"mobile_no",
 			"lead_owner",
 			"first_name",
@@ -563,9 +532,20 @@ class CRMLead(Document):
 			"response_by",
 			"first_response_time",
 			"first_responded_on",
-			"modified",
 			"_assign",
 			"image",
+			"phone",
+			"owner",
+			"_seen",
+			"creation",
+			"modified_by",
+			"_liked_by",
+			"organization",
+			"email",
+			"modified",
+			"_task_count",
+			"_note_count",
+			"_user_tags",
 		]
 		return {"columns": columns, "rows": rows}
 
