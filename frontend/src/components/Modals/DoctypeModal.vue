@@ -63,6 +63,13 @@
             bare
             class="mt-3"
           />
+          <LeadLinkBox
+            v-if="showLeadBox"
+            :ref-doctype="doc.reference_doctype"
+            :ref-name="String(doc.reference_docname)"
+            v-model:status="leadStatus"
+            @loaded="(s) => (leadStatusOriginal = s)"
+          />
           <ErrorMessage v-if="error" class="mt-4" :message="__(error)" />
         </div>
       </div>
@@ -107,6 +114,7 @@ import { setupCustomizations } from '@/utils'
 import { useDoctypeModal } from '@/composables/doctypeModal'
 
 import TagsBox from '@/components/TagsBox.vue'
+import LeadLinkBox from '@/components/LeadLinkBox.vue'
 import { saveTagsToDoc, parseTags } from '@/utils/tagColors'
 import { Dialog, call, createResource, toast } from 'frappe-ui'
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
@@ -145,6 +153,38 @@ const error = ref(null)
 const editMode = computed(() => Boolean(document.doc?.name))
 
 const newTags = ref([])
+
+// Royal: the lead's / deal's status shown on the task. A change is saved to the lead
+// together with the task (a Lost status needs a reason, so it is set on the lead itself).
+const leadStatus = ref('')
+const leadStatusOriginal = ref(undefined)
+const showLeadBox = computed(
+  () =>
+    props.doctype === 'CRM Task' &&
+    document.doc?.reference_docname &&
+    ['CRM Lead', 'CRM Deal'].includes(document.doc?.reference_doctype),
+)
+
+async function syncLeadStatus() {
+  if (!showLeadBox.value) return true
+  if (leadStatusOriginal.value === undefined) return true
+  if (!leadStatus.value || leadStatus.value === leadStatusOriginal.value)
+    return true
+  try {
+    await call('frappe.client.set_value', {
+      doctype: document.doc.reference_doctype,
+      name: document.doc.reference_docname,
+      fieldname: 'status',
+      value: leadStatus.value,
+    })
+    leadStatusOriginal.value = leadStatus.value
+    return true
+  } catch (e) {
+    error.value =
+      e?.messages?.[0] || __('Could not change the status of the lead')
+    return false
+  }
+}
 
 // Royal: a new task starts with the tags of its lead / deal. They can be removed
 // before saving. Picking another lead loads that lead's tags instead.
@@ -193,6 +233,7 @@ const _create = createResource({
 
 async function create() {
   await triggerOnBeforeCreate?.()
+  if (!(await syncLeadStatus())) return
 
   _create.submit({
     doc: {
@@ -202,10 +243,17 @@ async function create() {
   })
 }
 
-function update() {
+async function update() {
+  error.value = null
+  const statusChanged =
+    showLeadBox.value &&
+    leadStatus.value &&
+    leadStatusOriginal.value !== undefined &&
+    leadStatus.value !== leadStatusOriginal.value
+  if (!(await syncLeadStatus())) return
   // frappe-ui skips saving an unchanged doc without calling back, so handle it here
   if (!document.isDirty) {
-    toast.info(__('Nothing to update'))
+    if (!statusChanged) toast.info(__('Nothing to update'))
     show.value = false
     return
   }
@@ -222,8 +270,9 @@ function update() {
 
 // Royal: mark the task Done. With scheduleNext, open a new task for the same
 // lead (same name, phone and assignee) so the next follow-up can be set.
-function markDone(scheduleNext) {
+async function markDone(scheduleNext) {
   window.document.activeElement?.blur()
+  if (!(await syncLeadStatus())) return
   const d = document.doc
   const next = {
     reference_doctype: d.reference_doctype,
