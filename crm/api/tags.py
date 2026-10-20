@@ -157,3 +157,37 @@ def delete_tag(tag: str):
 	frappe.delete_doc("Tag", tag, ignore_permissions=True, force=True)
 	for link in links:
 		_notify(link.document_type, link.document_name)
+
+
+@frappe.whitelist()
+def rename_tag(old: str, new: str):
+	"""Change a tag's name on every record, keeping its color. Managers only."""
+	frappe.only_for(("System Manager", "Sales Manager"))
+	old, new = _clean(old), _clean(new)
+	if not old or not new:
+		frappe.throw(frappe._("Tag name is empty"))
+	if not frappe.db.exists("Tag", old):
+		frappe.throw(frappe._("Tag not found"))
+	if old == new:
+		return {"name": new}
+	if old.lower() != new.lower() and frappe.db.exists("Tag", new):
+		frappe.throw(frappe._("A tag named {0} already exists").format(new))
+
+	description = frappe.db.get_value("Tag", old, "description")
+	links = frappe.get_all(
+		"Tag Link",
+		filters={"tag": old},
+		fields=["document_type", "document_name"],
+		limit_page_length=0,
+	)
+	for link in links:
+		DocTags(link.document_type).remove(link.document_name, old)
+	frappe.delete_doc("Tag", old, ignore_permissions=True, force=True)
+	frappe.get_doc({"doctype": "Tag", "name": new, "description": description}).insert(
+		ignore_permissions=True
+	)
+	for link in links:
+		DocTags(link.document_type).add(link.document_name, new)
+	for link in links:
+		_notify(link.document_type, link.document_name)
+	return {"name": new}
