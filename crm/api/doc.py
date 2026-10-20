@@ -102,14 +102,14 @@ def get_filterable_fields(doctype: str):
 
 	# Royal: "Color" = the due-date color (red passed, yellow today, green future).
 	# On Tasks it is the task's own due date; on Leads / Deals it is the color of the
-	# Open Tasks circle (last created open task). Worked out on the server in royal_color_names.
+	# Open Tasks circle (last created open task). Worked out on the server in royal_color_filter.
 	if doctype in ROYAL_COLOR_DOCTYPES:
 		standard_fields.append(
 			{
 				"fieldname": "_due_color",
 				"fieldtype": "Select",
 				"label": "Color",
-				"options": "Yellow\nRed\nGreen",
+				"options": "Yellow, Red, Green\nYellow\nRed\nGreen",
 			}
 		)
 
@@ -333,27 +333,22 @@ def royal_due_kind(due, today):
 	return "future"
 
 
-def royal_color_names(doctype, value):
-	"""Record names that match / do not match a "Color is ..." filter.
+ROYAL_COLOR_ORDER = ("today", "overdue", "future")  # yellow, red, green
 
-	Returns (positive, names). Tasks use their own due date (Done / Canceled have no color).
-	Leads and Deals use the LAST CREATED open task, like the Open Tasks circle."""
-	if isinstance(value, (list, tuple)) and len(value) >= 2:
-		op, raw = str(value[0]).lower(), value[1]
-	else:
-		op, raw = "=", value
-	picked = raw if isinstance(raw, (list, tuple)) else [raw]
-	kinds = {ROYAL_COLOR_KINDS.get(str(c).strip().lower()) for c in picked}
-	kinds.discard(None)
-	positive = op in ("=", "in", "like")
+
+def royal_color_kinds(doctype):
+	"""{record name: "today" | "overdue" | "future"} for every record that has a color.
+	Tasks use their own due date (Done / Canceled have no color). Leads and Deals use the
+	LAST CREATED open task, like the Open Tasks circle."""
 	today = str(frappe.utils.getdate(frappe.utils.nowdate()))
-	names = []
+	out = {}
 	if doctype == "CRM Task":
 		for name, due in frappe.db.sql(
 			"select name, due_date from `tabCRM Task` where status not in ('Done', 'Canceled')"
 		):
-			if royal_due_kind(due, today) in kinds:
-				names.append(str(name))
+			kind = royal_due_kind(due, today)
+			if kind:
+				out[str(name)] = kind
 	else:
 		last_due = {}
 		for ref, due in frappe.db.sql(
@@ -362,8 +357,52 @@ def royal_color_names(doctype, value):
 			(doctype,),
 		):
 			last_due[str(ref)] = due
-		names = [ref for ref, due in last_due.items() if royal_due_kind(due, today) in kinds]
-	return positive, names
+		for ref, due in last_due.items():
+			kind = royal_due_kind(due, today)
+			if kind:
+				out[ref] = kind
+	return out
+
+
+def royal_color_picked(value):
+	"""(positive, kinds) of one "Color is ..." filter. The value can be one color, a list,
+	or "Yellow, Red, Green" (all colors)."""
+	if isinstance(value, (list, tuple)) and len(value) >= 2:
+		op, raw = str(value[0]).lower(), value[1]
+	else:
+		op, raw = "=", value
+	items = raw if isinstance(raw, (list, tuple)) else [raw]
+	kinds = set()
+	for item in items:
+		for part in str(item).split(","):
+			kind = ROYAL_COLOR_KINDS.get(part.strip().lower())
+			if kind:
+				kinds.add(kind)
+	return op in ("=", "in", "like"), kinds
+
+
+def royal_color_filter(doctype, values):
+	"""One name filter for all the Color filters on the screen.
+	Colors you pick with Is are joined with OR (a record has only one color, so AND would
+	always be empty). Is not removes its colors. When more than one color is shown, the
+	list is sorted Yellow, then Red, then Green (frappe.local.royal_color_rank)."""
+	kinds_of = royal_color_kinds(doctype)
+	picked = [royal_color_picked(v) for v in values]
+	show = set()
+	for positive, kinds in picked:
+		if positive:
+			show |= kinds
+	hide = set()
+	for positive, kinds in picked:
+		if not positive:
+			hide |= kinds
+	if not any(positive for positive, _ in picked):
+		show = set(ROYAL_COLOR_ORDER)
+	show -= hide
+	names = [n for n, k in kinds_of.items() if k in show]
+	if len(show) > 1:
+		frappe.local.royal_color_rank = {n: ROYAL_COLOR_ORDER.index(kinds_of[n]) for n in names}
+	return [doctype, "name", "in", names or [""]]
 
 
 def royal_tag_names(doctype, value):
@@ -392,11 +431,12 @@ def royal_extra_filters(doctype, extras):
 	"""Filters that need more than a plain column: the Color filter, and any filter that was
 	added a second / third time (key `field__2`). Returned as list-style filters, which
 	Frappe can repeat, unlike a dict."""
+	frappe.local.royal_color_rank = None
 	out = []
+	colors = []
 	for base, value in extras:
 		if base == "_due_color" and doctype in ROYAL_COLOR_DOCTYPES:
-			positive, names = royal_color_names(doctype, value)
-			out.append([doctype, "name", "in" if positive else "not in", names or [""]])
+			colors.append(value)
 		elif base == "_user_tags":
 			result = royal_tag_names(doctype, value)
 			if result:
@@ -404,6 +444,8 @@ def royal_extra_filters(doctype, extras):
 				out.append([doctype, "name", "in" if positive else "not in", names or [""]])
 		else:
 			out.append(make_filter_tuple(doctype, base, value))
+	if colors:
+		out.append(royal_color_filter(doctype, colors))
 	return out
 
 
@@ -553,16 +595,40 @@ def get_data(
 
 		# Royal: Notes / Open Tasks columns are counted, not stored in the table
 		db_rows = [r for r in rows if r not in ROYAL_COUNT_COLUMNS]
-		data = (
-			frappe.get_list(
+		rank = getattr(frappe.local, "royal_color_rank", None)
+		if rank:
+			# Royal: all colors shown -> Yellow first, then Red, then Green (newest first in each)
+			all_names = frappe.get_list(
 				doctype,
-				fields=db_rows,
+				fields=["name"],
 				filters=list_filters,
+				order_by="modified desc",
+				page_length=100000,
+			)
+			ordered = sorted(
+				(str(r.name) for r in all_names),
+				key=lambda n: rank.get(n, 9),
+			)[:page_length]
+			position = {n: i for i, n in enumerate(ordered)}
+			data = frappe.get_list(
+				doctype,
+				fields=db_rows if "name" in db_rows else [*db_rows, "name"],
+				filters=[*list_filters, [doctype, "name", "in", ordered or [""]]],
 				order_by=order_by,
 				page_length=page_length,
 			)
-			or []
-		)
+			data = sorted(data or [], key=lambda r: position.get(str(r.get("name")), 9999))
+		else:
+			data = (
+				frappe.get_list(
+					doctype,
+					fields=db_rows,
+					filters=list_filters,
+					order_by=order_by,
+					page_length=page_length,
+				)
+				or []
+			)
 		data = parse_list_data(data, doctype)
 		royal_add_counts(data, doctype, rows)
 
