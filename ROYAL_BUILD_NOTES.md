@@ -20,3 +20,5 @@ Rules:
 6. This notes file also lives on branch `royal-notes` in the frappe, erpnext and hrms forks (a separate branch, so version-16 stays untouched and frozen).
 
 Status check 2026-10-19: the three forks were not changed today. The frozen commits in the table above are still the ones the guard checks. All CRM changes are listed in `ROYAL.md` (branch `royal` of the crm fork).
+
+Status check 2026-10-20: the three forks were not changed. Frozen commits unchanged. New CRM work of 2026-10-20 (Color filter, repeated filters, Location, task form, Role Profiles, theme) is listed in `ROYAL.md`.
