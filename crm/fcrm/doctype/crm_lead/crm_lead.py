@@ -122,6 +122,8 @@ class CRMLead(Document):
 			values["lead_phone"] = self.phone or self.mobile_no
 		if meta.has_field("lead_name"):
 			values["lead_name"] = self.lead_name
+		if meta.has_field("lead_location"):
+			values["lead_location"] = self.get("location")
 		if values:
 			for name in frappe.get_all(
 				"CRM Task", filters={"reference_doctype": "CRM Lead", "reference_docname": self.name}, pluck="name"

@@ -30,6 +30,7 @@ function showTask(task) {
       reference_docname: props.doc?.name,
       lead_name: props.doc?.lead_name,
       lead_phone: props.doc?.phone || props.doc?.mobile_no,
+      lead_location: props.doc?.location,
     },
     callbacks: {
       afterInsert: (d) => afterDoctype(d, true),

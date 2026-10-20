@@ -72,7 +72,7 @@ class CRMTask(Document):
 			return
 		meta = frappe.get_meta("CRM Task")
 		lead = frappe.db.get_value(
-			"CRM Lead", self.reference_docname, ["lead_name", "phone", "mobile_no"], as_dict=True
+			"CRM Lead", self.reference_docname, ["lead_name", "phone", "mobile_no", "location"], as_dict=True
 		)
 		if not lead:
 			return
@@ -80,6 +80,8 @@ class CRMTask(Document):
 			self.lead_phone = lead.phone or lead.mobile_no
 		if meta.has_field("lead_name"):
 			self.lead_name = lead.lead_name
+		if meta.has_field("lead_location"):
+			self.lead_location = lead.location
 
 	def validate(self):
 		self.fill_from_lead()
@@ -113,6 +115,7 @@ class CRMTask(Document):
 			{"label": "Due Date", "type": "Date", "key": "due_date", "width": "8rem"},
 			{"label": "Lead Name", "type": "Data", "key": "lead_name", "width": "14rem"},
 			{"label": "Phone", "type": "Data", "key": "lead_phone", "width": "10rem"},
+			{"label": "Location", "type": "Data", "key": "lead_location", "width": "12rem"},
 			{"label": "Description", "type": "Text Editor", "key": "description", "width": "16rem"},
 			{"label": "Status", "type": "Select", "key": "status", "width": "8rem"},
 			{"label": "Assigned To", "type": "Link", "key": "assigned_to", "width": "10rem"},
@@ -122,6 +125,7 @@ class CRMTask(Document):
 			"name",
 			"lead_name",
 			"lead_phone",
+			"lead_location",
 			"title",
 			"description",
 			"assigned_to",

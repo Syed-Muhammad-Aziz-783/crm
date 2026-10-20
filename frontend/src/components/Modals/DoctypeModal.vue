@@ -230,6 +230,7 @@ function markDone(scheduleNext) {
     reference_docname: d.reference_docname,
     lead_name: d.lead_name,
     lead_phone: d.lead_phone,
+    lead_location: d.lead_location,
     assigned_to: d.assigned_to,
   }
   const callbacks = { ...doctypeModalState.callbacks.value }
