@@ -467,6 +467,53 @@ def royal_list_filters(doctype, filters, extras):
 	return out + royal_extra_filters(doctype, extras)
 
 
+ROYAL_NEGATIVE_OPS = ("!=", "not in", "not like", "not between")
+
+
+def royal_all_filters(doctype, filters):
+	"""All filters of a screen as one list. Universal rule (same as Odoo): filters on the SAME
+	field are joined with OR when they say "is / has / contains"; filters that exclude
+	("is not", "not in", "doesn't have tag") are always ANDed; different fields are ANDed.
+	A field can be added as many times as needed (keys `field`, `field__2`, `field__3`)."""
+	frappe.local.royal_color_rank = None
+	groups = {}
+	for key, value in (filters or {}).items():
+		groups.setdefault(ROYAL_DUP_SUFFIX.sub("", key), []).append(value)
+
+	out = []
+	for base, values in groups.items():
+		if base == "_due_color" and doctype in ROYAL_COLOR_DOCTYPES:
+			out.append(royal_color_filter(doctype, values))
+		elif base == "_user_tags":
+			union = None
+			for value in values:
+				result = royal_tag_names(doctype, value)
+				if not result:
+					continue
+				positive, names = result
+				if positive:
+					union = (union or set()) | set(names)
+				else:
+					out.append([doctype, "name", "not in", names or [""]])
+			if union is not None:
+				out.append([doctype, "name", "in", sorted(union) or [""]])
+		else:
+			conds = [make_filter_tuple(doctype, base, v) for v in values]
+			positives = [c for c in conds if str(c[2]).lower() not in ROYAL_NEGATIVE_OPS]
+			out += [c for c in conds if c not in positives]
+			if len(positives) == 1:
+				out += positives
+			elif positives:
+				names = set()
+				for cond in positives:
+					names |= {
+						str(n)
+						for n in frappe.get_all(doctype, filters=[cond], pluck="name", limit_page_length=0)
+					}
+				out.append([doctype, "name", "in", sorted(names) or [""]])
+	return out
+
+
 @frappe.whitelist()
 def royal_resolve_filters(doctype: str, filters: str | dict):
 	"""The same filters get_data uses, as a plain list, so Export gives the same rows as the screen."""
@@ -475,9 +522,7 @@ def royal_resolve_filters(doctype: str, filters: str | dict):
 		value = filters[key]
 		if value == "@me":
 			filters[key] = frappe.session.user
-	plain, extras = royal_split_filters(filters)
-	plain = royal_tag_filters(doctype, plain)
-	return royal_list_filters(doctype, plain, extras)
+	return royal_all_filters(doctype, filters)
 
 
 @frappe.whitelist()
@@ -523,9 +568,9 @@ def get_data(
 		default_filters = frappe.parse_json(default_filters)
 		filters.update(default_filters)
 
-	filters, royal_extras = royal_split_filters(filters)
+	list_filters = royal_all_filters(doctype, filters)
+	filters, _royal_extras = royal_split_filters(filters)
 	filters = royal_tag_filters(doctype, filters)
-	list_filters = royal_list_filters(doctype, filters, royal_extras)
 
 	is_default = True
 	data = []
@@ -1169,7 +1214,9 @@ def _royal_delete_one(doctype: str, name: str):
 		frappe.throw(_("You do not have permission to delete this record"), frappe.PermissionError)
 
 	frappe.db.delete("CRM Notification", {"reference_doctype": doctype, "reference_name": name})
-	frappe.db.delete("CRM Notification", {"notification_type_doctype": doctype, "notification_type_doc": name})
+	frappe.db.delete(
+		"CRM Notification", {"notification_type_doctype": doctype, "notification_type_doc": name}
+	)
 
 	if doctype in ("CRM Lead", "CRM Deal"):
 		for child in ("CRM Task", "FCRM Note"):
