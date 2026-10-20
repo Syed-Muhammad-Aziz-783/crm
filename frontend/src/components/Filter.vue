@@ -128,6 +128,7 @@
           </div>
           <div class="flex items-center justify-between gap-2">
             <Combobox
+              :key="addKey"
               :model-value="null"
               :options="availableFilters"
               :placeholder="__('First Name')"
@@ -170,7 +171,7 @@ import {
   DateTimePicker,
   DateRangePicker,
 } from 'frappe-ui'
-import { h, computed, onMounted } from 'vue'
+import { h, ref, computed, onMounted } from 'vue'
 import { allTags, loadTags } from '@/utils/tagColors'
 import { isMobileView } from '@/composables/settings'
 import { getFormat } from '@/utils'
@@ -246,17 +247,11 @@ const filterFieldOptions = computed(() => {
   )
 })
 
+// Royal: the same field can be added again and again (for example Color is Yellow
+// and Color is Red, or two different tags), so nothing is taken out of the list.
 const availableFilters = computed(() => {
   if (!filterableFields.data) return []
-
-  const selectedFieldNames = new Set()
-  for (const filter of filters.value) {
-    selectedFieldNames.add(filter.fieldname)
-  }
-
-  return filterFieldOptions.value.filter(
-    (field) => !selectedFieldNames.has(field.fieldname),
-  )
+  return filterFieldOptions.value
 })
 
 function removeCommonFilters(commonFilters, allFilters) {
@@ -273,7 +268,9 @@ function removeCommonFilters(commonFilters, allFilters) {
 function convertFilters(data, allFilters) {
   let f = []
   for (let [key, value] of Object.entries(allFilters)) {
-    let field = data.find((f) => f.fieldname === key)
+    // Royal: a repeated filter is saved as field__2, field__3 ...
+    const base = key.replace(/__\d+$/, '')
+    let field = data.find((f) => f.fieldname === base)
     if (typeof value !== 'object' || !value) {
       value = ['=', value]
       if (field?.fieldtype === 'Check') {
@@ -284,11 +281,11 @@ function convertFilters(data, allFilters) {
     if (field) {
       f.push({
         field,
-        fieldname: key,
+        fieldname: base,
         operator: oppositeOperatorMap[value[0]],
         // Royal: the tag picker shows the plain tag name, not %name%
         value:
-          key === '_user_tags' && typeof value[1] === 'string'
+          base === '_user_tags' && typeof value[1] === 'string'
             ? value[1].replace(/%/g, '')
             : value[1],
       })
@@ -298,6 +295,13 @@ function convertFilters(data, allFilters) {
 }
 
 function getOperators(fieldtype, fieldname) {
+  if (fieldname === '_due_color') {
+    // Royal: Color is / is not Yellow, Red or Green (worked out on the server)
+    return [
+      { label: __('Is'), value: 'equals' },
+      { label: __('Is not'), value: 'not equals' },
+    ]
+  }
   let options = []
   if (typeString.includes(fieldtype)) {
     options.push(
@@ -531,8 +535,13 @@ function getSelectOptions(options) {
   return options.split('\n')
 }
 
+// Royal: the Add Filter list remembers the last pick, so picking the same field again
+// did nothing. A new key after every add gives a fresh list.
+const addKey = ref(0)
+
 function setfilter(data) {
   if (!data) return
+  addKey.value++
   filters.value.add({
     field: {
       label: data.label,
@@ -613,12 +622,18 @@ function apply() {
 
 function parseFilters(filters) {
   const filtersArray = Array.from(filters)
+  const seen = {}
   const obj = filtersArray.map(transformIn).reduce((p, c) => {
+    // Royal: the 2nd, 3rd ... filter on the same field gets the key field__2, field__3
+    seen[c.fieldname] = (seen[c.fieldname] || 0) + 1
+    const key =
+      seen[c.fieldname] > 1
+        ? `${c.fieldname}__${seen[c.fieldname]}`
+        : c.fieldname
     if (['equals', '='].includes(c.operator)) {
-      p[c.fieldname] =
-        c.value == 'Yes' ? true : c.value == 'No' ? false : c.value
+      p[key] = c.value == 'Yes' ? true : c.value == 'No' ? false : c.value
     } else {
-      p[c.fieldname] = [operatorMap[c.operator.toLowerCase()], c.value]
+      p[key] = [operatorMap[c.operator.toLowerCase()], c.value]
     }
     return p
   }, {})

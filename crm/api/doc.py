@@ -1,4 +1,5 @@
 import json
+import re
 
 import frappe
 from frappe import _
@@ -98,6 +99,19 @@ def get_filterable_fields(doctype: str):
 		{"fieldname": "creation", "fieldtype": "Datetime", "label": "Created On"},
 		{"fieldname": "modified", "fieldtype": "Datetime", "label": "Last Updated On"},
 	]
+
+	# Royal: "Color" = the due-date color (red passed, yellow today, green future).
+	# On Tasks it is the task's own due date; on Leads / Deals it is the color of the
+	# Open Tasks circle (last created open task). Worked out on the server in royal_color_names.
+	if doctype in ROYAL_COLOR_DOCTYPES:
+		standard_fields.append(
+			{
+				"fieldname": "_due_color",
+				"fieldtype": "Select",
+				"label": "Color",
+				"options": "Yellow\nRed\nGreen",
+			}
+		)
 
 	for field in standard_fields + meta.get("fields", []):
 		if field.get("fieldname") not in restricted_fields and field.get("fieldtype") in allowed_fieldtypes:
@@ -302,6 +316,128 @@ def royal_tag_filters(doctype, filters):
 	return filters
 
 
+ROYAL_COLOR_DOCTYPES = ("CRM Task", "CRM Lead", "CRM Deal")
+ROYAL_COLOR_KINDS = {"yellow": "today", "red": "overdue", "green": "future"}
+ROYAL_DUP_SUFFIX = re.compile(r"__\d+$")
+
+
+def royal_due_kind(due, today):
+	"""Same rule as frontend/src/utils/dueColor.js: red passed, yellow today, green future."""
+	if not due:
+		return ""
+	day = str(due)[:10]
+	if day < today:
+		return "overdue"
+	if day == today:
+		return "today"
+	return "future"
+
+
+def royal_color_names(doctype, value):
+	"""Record names that match / do not match a "Color is ..." filter.
+
+	Returns (positive, names). Tasks use their own due date (Done / Canceled have no color).
+	Leads and Deals use the LAST CREATED open task, like the Open Tasks circle."""
+	if isinstance(value, (list, tuple)) and len(value) >= 2:
+		op, raw = str(value[0]).lower(), value[1]
+	else:
+		op, raw = "=", value
+	picked = raw if isinstance(raw, (list, tuple)) else [raw]
+	kinds = {ROYAL_COLOR_KINDS.get(str(c).strip().lower()) for c in picked}
+	kinds.discard(None)
+	positive = op in ("=", "in", "like")
+	today = str(frappe.utils.getdate(frappe.utils.nowdate()))
+	names = []
+	if doctype == "CRM Task":
+		for name, due in frappe.db.sql(
+			"select name, due_date from `tabCRM Task` where status not in ('Done', 'Canceled')"
+		):
+			if royal_due_kind(due, today) in kinds:
+				names.append(str(name))
+	else:
+		last_due = {}
+		for ref, due in frappe.db.sql(
+			"select reference_docname, due_date from `tabCRM Task` "
+			"where reference_doctype=%s and status not in ('Done', 'Canceled') order by creation asc",
+			(doctype,),
+		):
+			last_due[str(ref)] = due
+		names = [ref for ref, due in last_due.items() if royal_due_kind(due, today) in kinds]
+	return positive, names
+
+
+def royal_tag_names(doctype, value):
+	"""Record names that have / do not have the chosen tag(s). Same rules as royal_tag_filters."""
+	if isinstance(value, (list, tuple)) and len(value) >= 2:
+		op, val = str(value[0]).lower(), value[1]
+	else:
+		op, val = "=", value
+	link_filters = {"document_type": doctype}
+	if op == "is":
+		positive = str(val).lower() == "set"
+	else:
+		items = val if isinstance(val, (list, tuple)) else [val]
+		tags = [str(t).strip("% ").strip() for t in items if t is not None and str(t).strip("% ").strip()]
+		if not tags:
+			return None
+		link_filters["tag"] = ["in", tags]
+		positive = op in ("like", "=", "in")
+	names = frappe.get_all(
+		"Tag Link", filters=link_filters, pluck="document_name", distinct=True, limit_page_length=0
+	)
+	return positive, [str(n) for n in names]
+
+
+def royal_extra_filters(doctype, extras):
+	"""Filters that need more than a plain column: the Color filter, and any filter that was
+	added a second / third time (key `field__2`). Returned as list-style filters, which
+	Frappe can repeat, unlike a dict."""
+	out = []
+	for base, value in extras:
+		if base == "_due_color" and doctype in ROYAL_COLOR_DOCTYPES:
+			positive, names = royal_color_names(doctype, value)
+			out.append([doctype, "name", "in" if positive else "not in", names or [""]])
+		elif base == "_user_tags":
+			result = royal_tag_names(doctype, value)
+			if result:
+				positive, names = result
+				out.append([doctype, "name", "in" if positive else "not in", names or [""]])
+		else:
+			out.append(make_filter_tuple(doctype, base, value))
+	return out
+
+
+def royal_split_filters(filters):
+	"""Split a filter dict into plain filters and the ones royal_extra_filters must handle."""
+	plain, extras = frappe._dict(), []
+	for key, value in (filters or {}).items():
+		base = ROYAL_DUP_SUFFIX.sub("", key)
+		if base != key or base == "_due_color":
+			extras.append((base, value))
+		else:
+			plain[key] = value
+	return plain, extras
+
+
+def royal_list_filters(doctype, filters, extras):
+	"""Everything get_data filters by, as one list (plain filters + extras)."""
+	out = [make_filter_tuple(doctype, k, v) for k, v in (filters or {}).items()]
+	return out + royal_extra_filters(doctype, extras)
+
+
+@frappe.whitelist()
+def royal_resolve_filters(doctype: str, filters: str | dict):
+	"""The same filters get_data uses, as a plain list, so Export gives the same rows as the screen."""
+	filters = frappe.parse_json(filters) or {}
+	for key in list(filters):
+		value = filters[key]
+		if value == "@me":
+			filters[key] = frappe.session.user
+	plain, extras = royal_split_filters(filters)
+	plain = royal_tag_filters(doctype, plain)
+	return royal_list_filters(doctype, plain, extras)
+
+
 @frappe.whitelist()
 def get_data(
 	doctype: str,
@@ -345,7 +481,9 @@ def get_data(
 		default_filters = frappe.parse_json(default_filters)
 		filters.update(default_filters)
 
+	filters, royal_extras = royal_split_filters(filters)
 	filters = royal_tag_filters(doctype, filters)
+	list_filters = royal_list_filters(doctype, filters, royal_extras)
 
 	is_default = True
 	data = []
@@ -419,7 +557,7 @@ def get_data(
 			frappe.get_list(
 				doctype,
 				fields=db_rows,
-				filters=filters,
+				filters=list_filters,
 				order_by=order_by,
 				page_length=page_length,
 			)
@@ -602,7 +740,7 @@ def get_data(
 		"page_length_count": page_length_count,
 		"is_default": is_default,
 		"views": get_views(doctype),
-		"total_count": frappe.get_list(doctype, filters=filters, fields=[COUNT_NAME])[0].total_count,
+		"total_count": frappe.get_list(doctype, filters=list_filters, fields=[COUNT_NAME])[0].total_count,
 		"row_count": len(data),
 		"form_script": get_form_script(doctype),
 		"list_script": get_form_script(doctype, "List"),

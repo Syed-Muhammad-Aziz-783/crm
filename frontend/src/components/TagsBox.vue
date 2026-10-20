@@ -303,6 +303,14 @@ onMounted(() => document.addEventListener('pointerdown', onOutside))
 onBeforeUnmount(() => document.removeEventListener('pointerdown', onOutside))
 
 watch(() => props.docname, load, { immediate: true })
+// create form: the parent can fill the tags later (for example the lead's tags on a new task)
+watch(
+  () => props.modelValue,
+  (v) => {
+    if (!local.value) return
+    if (JSON.stringify(v || []) !== JSON.stringify(tags.value)) tags.value = [...(v || [])]
+  },
+)
 loadTags()
 
 // Another device changed this record's tags (or the user came back to the tab): re-read quietly.

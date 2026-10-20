@@ -737,7 +737,18 @@ async function exportRows() {
     })
   }
 
-  filters = JSON.stringify(filters)
+  // Royal: Color, Tags and repeated filters are worked out on the server, so the
+  // export gives the same rows as the screen.
+  try {
+    filters = JSON.stringify(
+      await call('crm.api.doc.royal_resolve_filters', {
+        doctype: props.doctype,
+        filters: JSON.stringify(filters),
+      }),
+    )
+  } catch (e) {
+    filters = JSON.stringify(filters)
+  }
 
   let order_by = list.value.params.order_by
   let page_length = list.value.params.page_length

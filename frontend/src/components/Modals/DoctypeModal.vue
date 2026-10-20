@@ -107,7 +107,7 @@ import { setupCustomizations } from '@/utils'
 import { useDoctypeModal } from '@/composables/doctypeModal'
 
 import TagsBox from '@/components/TagsBox.vue'
-import { saveTagsToDoc } from '@/utils/tagColors'
+import { saveTagsToDoc, parseTags } from '@/utils/tagColors'
 import { Dialog, call, createResource, toast } from 'frappe-ui'
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -145,6 +145,28 @@ const error = ref(null)
 const editMode = computed(() => Boolean(document.doc?.name))
 
 const newTags = ref([])
+
+// Royal: a new task starts with the tags of its lead / deal. They can be removed
+// before saving. Picking another lead loads that lead's tags instead.
+watch(
+  () => [document.doc?.reference_doctype, document.doc?.reference_docname],
+  async ([refDoctype, refName]) => {
+    if (props.doctype !== 'CRM Task' || editMode.value) return
+    if (!refName) return
+    try {
+      const rows = await call('frappe.client.get_list', {
+        doctype: refDoctype || 'CRM Lead',
+        fields: ['name', '_user_tags'],
+        filters: { name: refName },
+        limit_page_length: 1,
+      })
+      newTags.value = parseTags(rows?.[0]?._user_tags)
+    } catch (e) {
+      // no tags column yet or no access: the task simply starts without tags
+    }
+  },
+  { immediate: true },
+)
 
 const _create = createResource({
   url: 'frappe.client.insert',
