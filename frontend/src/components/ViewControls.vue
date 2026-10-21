@@ -21,6 +21,13 @@
             <Switch v-model="showClosed" size="sm" />
             <span class="whitespace-nowrap">{{ __(closedCfg.label) }}</span>
           </div>
+          <div
+            v-if="closedCfg"
+            class="flex items-center gap-1.5 text-sm text-ink-gray-7"
+          >
+            <Switch v-model="colorSequence" size="sm" />
+            <span class="whitespace-nowrap">{{ __('Color sequence') }}</span>
+          </div>
           <Button
             :tooltip="__('Refresh')"
             icon="lucide-refresh-ccw"
@@ -168,12 +175,19 @@
       </div>
       <div class="flex items-center gap-2">
         <div
-            v-if="closedCfg"
-            class="flex items-center gap-1.5 text-sm text-ink-gray-7"
-          >
-            <Switch v-model="showClosed" size="sm" />
-            <span class="whitespace-nowrap">{{ __(closedCfg.label) }}</span>
-          </div>
+          v-if="closedCfg"
+          class="flex items-center gap-1.5 text-sm text-ink-gray-7"
+        >
+          <Switch v-model="showClosed" size="sm" />
+          <span class="whitespace-nowrap">{{ __(closedCfg.label) }}</span>
+        </div>
+        <div
+          v-if="closedCfg"
+          class="flex items-center gap-1.5 text-sm text-ink-gray-7"
+        >
+          <Switch v-model="colorSequence" size="sm" />
+          <span class="whitespace-nowrap">{{ __('Color sequence') }}</span>
+        </div>
         <Button
           :tooltip="__('Refresh')"
           icon="lucide-refresh-ccw"
@@ -376,7 +390,11 @@ import {
 import { useRouter, useRoute } from 'vue-router'
 import { isMobileView } from '@/composables/settings'
 import { useLiveSync } from '@/composables/useLiveSync'
-import { closedConfig, useShowClosed } from '@/composables/closedToggle'
+import {
+  closedConfig,
+  useShowClosed,
+  useColorSequence,
+} from '@/composables/closedToggle'
 import {
   commandPaletteOpen,
   useCommandPaletteContext,
@@ -541,6 +559,14 @@ watch(showClosed, () => {
   if (closedCfg) reload()
 })
 
+// Royal: Color sequence (Yellow, Red, No color, Green). The server does the sorting.
+const colorSequence = closedCfg ? useColorSequence(closedCfg.key) : ref(false)
+const colorSequenceParam = () => (colorSequence.value ? 1 : 0)
+
+watch(colorSequence, () => {
+  if (closedCfg) reload()
+})
+
 function getParams() {
   let _view = getView(route.query.view, route.params.viewType, props.doctype)
   const view_name = _view?.name || ''
@@ -593,6 +619,7 @@ function getParams() {
     rows: rows,
     page_length: pageLength.value,
     page_length_count: pageLengthCount.value,
+    color_sequence: colorSequenceParam(),
   }
 }
 
@@ -625,6 +652,7 @@ listResource = createResource({
       rows: data.rows,
       page_length: params.page_length,
       page_length_count: params.page_length_count,
+      color_sequence: colorSequenceParam(),
     }
   },
 })

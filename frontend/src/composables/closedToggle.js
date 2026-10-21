@@ -9,6 +9,16 @@ export function useShowClosed(key) {
   return states[key]
 }
 
+// Royal: "Color sequence" switch, ON by default. Lists show Yellow, Red, No color, Green.
+// Kept per browser (Leads and Tasks each have their own).
+const seqStates = {}
+
+export function useColorSequence(key) {
+  if (!seqStates[key])
+    seqStates[key] = useStorage('royal_color_sequence_' + key, true)
+  return seqStates[key]
+}
+
 export const closedConfig = {
   'CRM Lead': {
     key: 'leads',

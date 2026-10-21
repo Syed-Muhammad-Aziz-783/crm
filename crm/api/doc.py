@@ -109,7 +109,7 @@ def get_filterable_fields(doctype: str):
 				"fieldname": "_due_color",
 				"fieldtype": "Select",
 				"label": "Color",
-				"options": "Yellow, Red, Green\nYellow\nRed\nGreen",
+				"options": "Yellow\nRed\nGreen\nNo color",
 			}
 		)
 
@@ -317,7 +317,7 @@ def royal_tag_filters(doctype, filters):
 
 
 ROYAL_COLOR_DOCTYPES = ("CRM Task", "CRM Lead", "CRM Deal")
-ROYAL_COLOR_KINDS = {"yellow": "today", "red": "overdue", "green": "future"}
+ROYAL_COLOR_KINDS = {"yellow": "today", "red": "overdue", "green": "future", "no color": "none"}
 ROYAL_DUP_SUFFIX = re.compile(r"__\d+$")
 
 
@@ -333,7 +333,7 @@ def royal_due_kind(due, today):
 	return "future"
 
 
-ROYAL_COLOR_ORDER = ("today", "overdue", "future")  # yellow, red, green
+ROYAL_COLOR_ORDER = ("today", "overdue", "none", "future")  # Color sequence: yellow, red, no color, green
 
 
 def royal_color_kinds(doctype):
@@ -366,7 +366,7 @@ def royal_color_kinds(doctype):
 
 def royal_color_picked(value):
 	"""(positive, kinds) of one "Color is ..." filter. The value can be one color, a list,
-	or "Yellow, Red, Green" (all colors)."""
+	or "No color"."""
 	if isinstance(value, (list, tuple)) and len(value) >= 2:
 		op, raw = str(value[0]).lower(), value[1]
 	else:
@@ -384,8 +384,8 @@ def royal_color_picked(value):
 def royal_color_filter(doctype, values):
 	"""One name filter for all the Color filters on the screen.
 	Colors you pick with Is are joined with OR (a record has only one color, so AND would
-	always be empty). Is not removes its colors. When more than one color is shown, the
-	list is sorted Yellow, then Red, then Green (frappe.local.royal_color_rank)."""
+	always be empty). Is not removes its colors. "No color" = no open task / no due date /
+	Done. The order of the list is NOT decided here, see royal_color_rank (Color sequence)."""
 	kinds_of = royal_color_kinds(doctype)
 	picked = [royal_color_picked(v) for v in values]
 	show = set()
@@ -399,10 +399,21 @@ def royal_color_filter(doctype, values):
 	if not any(positive for positive, _ in picked):
 		show = set(ROYAL_COLOR_ORDER)
 	show -= hide
+	if "none" in show:
+		# records without a color are not in kinds_of, so cut away the colors we do not show
+		hidden = [n for n, k in kinds_of.items() if k not in show]
+		return [doctype, "name", "not in", hidden or [""]]
 	names = [n for n, k in kinds_of.items() if k in show]
-	if len(show) > 1:
-		frappe.local.royal_color_rank = {n: ROYAL_COLOR_ORDER.index(kinds_of[n]) for n in names}
 	return [doctype, "name", "in", names or [""]]
+
+
+def royal_color_rank(doctype):
+	"""Function name -> sort position for the Color sequence: Yellow, Red, No color, Green."""
+	kinds_of = royal_color_kinds(doctype)
+	none_rank = ROYAL_COLOR_ORDER.index("none")
+	return lambda name: (
+		ROYAL_COLOR_ORDER.index(kinds_of[name]) if name in kinds_of else none_rank
+	)
 
 
 def royal_tag_names(doctype, value):
@@ -431,7 +442,6 @@ def royal_extra_filters(doctype, extras):
 	"""Filters that need more than a plain column: the Color filter, and any filter that was
 	added a second / third time (key `field__2`). Returned as list-style filters, which
 	Frappe can repeat, unlike a dict."""
-	frappe.local.royal_color_rank = None
 	out = []
 	colors = []
 	for base, value in extras:
@@ -475,7 +485,6 @@ def royal_all_filters(doctype, filters):
 	field are joined with OR when they say "is / has / contains"; filters that exclude
 	("is not", "not in", "doesn't have tag") are always ANDed; different fields are ANDed.
 	A field can be added as many times as needed (keys `field`, `field__2`, `field__3`)."""
-	frappe.local.royal_color_rank = None
 	groups = {}
 	for key, value in (filters or {}).items():
 		groups.setdefault(ROYAL_DUP_SUFFIX.sub("", key), []).append(value)
@@ -540,6 +549,7 @@ def get_data(
 	kanban_fields: str | list | None = None,
 	view: str | dict | None = None,
 	default_filters: dict | None = None,
+	color_sequence: int | str | None = 0,
 ):
 	custom_view = False
 	filters = frappe._dict(filters)
@@ -640,20 +650,20 @@ def get_data(
 
 		# Royal: Notes / Open Tasks columns are counted, not stored in the table
 		db_rows = [r for r in rows if r not in ROYAL_COUNT_COLUMNS]
-		rank = getattr(frappe.local, "royal_color_rank", None)
-		if rank:
-			# Royal: all colors shown -> Yellow first, then Red, then Green (newest first in each)
-			all_names = frappe.get_list(
-				doctype,
-				fields=["name"],
-				filters=list_filters,
-				order_by="modified desc",
-				page_length=100000,
-			)
-			ordered = sorted(
-				(str(r.name) for r in all_names),
-				key=lambda n: rank.get(n, 9),
-			)[:page_length]
+		# Royal: Color sequence (switch is ON by default in the list) -> Yellow, Red, No color,
+		# Green. Inside each color the user's own sort stays (newest first by default).
+		sequence = str(color_sequence).lower() in ("1", "true") and doctype in ROYAL_COLOR_DOCTYPES
+		if sequence:
+			rank_of = royal_color_rank(doctype)
+			try:
+				all_names = frappe.get_list(
+					doctype, fields=["name"], filters=list_filters, order_by=order_by, page_length=100000
+				)
+			except Exception:
+				all_names = frappe.get_list(
+					doctype, fields=["name"], filters=list_filters, order_by="modified desc", page_length=100000
+				)
+			ordered = sorted((str(r.name) for r in all_names), key=rank_of)[:page_length]
 			position = {n: i for i, n in enumerate(ordered)}
 			data = frappe.get_list(
 				doctype,
