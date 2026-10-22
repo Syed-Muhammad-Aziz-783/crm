@@ -30,9 +30,11 @@ jobs:
           path: crm
 
       - name: Get Frappe UI source (needed by the CRM screen build)
+        # From OUR frozen fork at the frozen commit, never from github.com/frappe (fork rules).
         run: |
-          git clone --depth 1 --filter=blob:none --sparse -b version-16 https://github.com/frappe/frappe.git frappe
+          git clone --filter=blob:none --sparse --no-checkout https://github.com/Syed-Muhammad-Aziz-783/frappe.git frappe
           git -C frappe sparse-checkout set ui
+          git -C frappe checkout 4515014c87ece6cb20ee91d2cfb121c5cbd1ff4a
 
       - uses: actions/setup-node@v4
         with:
