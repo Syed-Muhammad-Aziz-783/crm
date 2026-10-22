@@ -147,3 +147,38 @@
 		if (!start_live_sync()) setTimeout(start_live_sync, 3000);
 	});
 })();
+
+// Royal: desk apps screen tiles that point to our own site (for example Frappe CRM at /crm)
+// open in the SAME tab. Frappe adds target="_blank" to every External tile; we remove it only
+// when the link stays on this site. Links to other sites still open in a new tab.
+(function () {
+	function same_tab_for_own_site() {
+		try {
+			var tiles = document.querySelectorAll('a.desktop-icon[target="_blank"]');
+			for (var i = 0; i < tiles.length; i++) {
+				var href = tiles[i].getAttribute("href") || "";
+				if (href.indexOf(window.location.origin + "/") === 0 || href.charAt(0) === "/") {
+					tiles[i].removeAttribute("target");
+					tiles[i].removeAttribute("rel");
+				}
+			}
+		} catch (e) {
+			/* never break the desk because of this */
+		}
+	}
+	var queued = false;
+	function schedule() {
+		if (queued) return;
+		queued = true;
+		setTimeout(function () {
+			queued = false;
+			same_tab_for_own_site();
+		}, 50);
+	}
+	function start() {
+		if (!document.body) return setTimeout(start, 200);
+		same_tab_for_own_site();
+		new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+	}
+	start();
+})();
