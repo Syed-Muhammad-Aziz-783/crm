@@ -82,6 +82,8 @@
 
 	function one_phone_field(frm) {
 		if (!frm || !frm.fields_dict || !frm.fields_dict.mobile_no) return;
+		// The User form needs its own Mobile No: phone-number login reads that field.
+		if (frm.doctype === "User") return;
 		try {
 			if (frm.fields_dict.phone) {
 				frm.set_df_property("mobile_no", "hidden", 1);
